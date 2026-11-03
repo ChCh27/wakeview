@@ -1,0 +1,41 @@
+# wakeview
+
+Browse your Claude Code sessions in a local web UI.
+
+wakeview reads the session files Claude Code keeps in `~/.claude/projects` and serves them as web pages on localhost:
+
+- **Projects**: every project with its session count and last activity. Projects whose directory no longer exists on disk are marked.
+- **Sessions**: each session's title, start time, last update and message count.
+- **Transcript**: your prompts and Claude's replies (rendered markdown). Tool calls and thinking are collapsed; open a tool call to see its input and result.
+- **Live**: an open transcript picks up new messages while the session is still running.
+
+Subagent transcripts are not shown.
+
+## Install
+
+Requires Go 1.26 or newer.
+
+```sh
+go install github.com/ChCh27/wakeview@latest
+```
+
+## Run
+
+```sh
+wakeview
+```
+
+Then open http://127.0.0.1:7777.
+
+| Flag | Default | |
+|---|---|---|
+| `--port` | `7777` | Port to listen on. wakeview binds to 127.0.0.1 only. |
+| `--dir` | `~/.claude/projects` | Claude Code projects directory. |
+
+wakeview only reads the session files; it never modifies them.
+
+## License
+
+[MIT](LICENSE)
+
+wakeview is not affiliated with Anthropic.
