@@ -11,7 +11,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ChCh27/wakeview/internal/export"
@@ -68,7 +70,7 @@ func New(store *session.Store) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, page := range []string{"projects", "sessions", "session"} {
+	for _, page := range []string{"projects", "sessions", "session", "memories", "memory"} {
 		t, err := template.New("").Funcs(funcs).ParseFS(web.FS, "templates/base.html", "templates/partials.html", "templates/"+page+".html")
 		if err != nil {
 			return nil, err
@@ -91,6 +93,8 @@ func New(store *session.Store) (*Server, error) {
 	s.mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
 	s.mux.HandleFunc("GET /{$}", s.handleProjects)
 	s.mux.HandleFunc("GET /p/{dir}", s.handleSessions)
+	s.mux.HandleFunc("GET /p/{dir}/memory", s.handleMemories)
+	s.mux.HandleFunc("GET /p/{dir}/memory/{file}", s.handleMemory)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}", s.handleSession)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/events", s.handleEvents)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/export.md", s.handleExportMarkdown)
@@ -124,6 +128,78 @@ func (s *Server) handleSessions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.render(w, "sessions", p)
+}
+
+func (s *Server) handleMemories(w http.ResponseWriter, r *http.Request) {
+	dir := r.PathValue("dir")
+	p, err := s.store.Project(dir)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	mems, err := s.store.Memories(dir)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	s.render(w, "memories", map[string]any{"Project": p, "Memories": mems, "HasIndex": s.store.HasIndex(dir), "IndexFile": session.IndexFile})
+}
+
+func (s *Server) handleMemory(w http.ResponseWriter, r *http.Request) {
+	dir := r.PathValue("dir")
+	p, err := s.store.Project(dir)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	m, err := s.store.Memory(dir, r.PathValue("file"))
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	mems, err := s.store.Memories(dir)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	origin := ""
+	if m.OriginSession != "" {
+		if _, _, err := s.store.Session(dir, m.OriginSession); err == nil {
+			origin = fmt.Sprintf("/p/%s/s/%s", url.PathEscape(dir), url.PathEscape(m.OriginSession))
+		}
+	}
+	s.render(w, "memory", map[string]any{
+		"Project": p,
+		"Memory":  m,
+		"Origin":  origin,
+		"HTML":    s.dec.Markdown(linkMemories(m.Body, dir, mems)),
+	})
+}
+
+var wikiLink = regexp.MustCompile(`\[\[([^\[\]|]+)(?:\|([^\[\]]+))?\]\]`)
+
+// linkMemories turns [[name]] and [[name|label]] into markdown links to the memory with that name.
+// A name with no memory becomes a "#broken" link, which the stylesheet greys out.
+func linkMemories(body, dir string, mems []session.Memory) string {
+	files := map[string]string{}
+	for _, m := range mems {
+		files[strings.TrimSuffix(m.File, ".md")] = m.File
+		if m.Name != "" {
+			files[m.Name] = m.File
+		}
+	}
+	return wikiLink.ReplaceAllStringFunc(body, func(match string) string {
+		sub := wikiLink.FindStringSubmatch(match)
+		name := strings.TrimSpace(sub[1])
+		label := strings.TrimSpace(sub[2])
+		if label == "" {
+			label = name
+		}
+		if file, ok := files[name]; ok {
+			return fmt.Sprintf("[%s](/p/%s/memory/%s)", label, url.PathEscape(dir), url.PathEscape(file))
+		}
+		return fmt.Sprintf("[%s](#broken)", label)
+	})
 }
 
 func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {

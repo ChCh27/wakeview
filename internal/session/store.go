@@ -34,6 +34,8 @@ type Project struct {
 	// CostUSD sums the sessions that have cost data; CostKnown is false when none do.
 	CostUSD   float64
 	CostKnown bool
+	// Memories is the number of memory files, not counting MEMORY.md.
+	Memories int
 }
 
 func (p Project) Name() string {
@@ -88,7 +90,7 @@ func (s *Store) Project(dir string) (Project, error) {
 	if err != nil {
 		return Project{}, ErrNotFound
 	}
-	p := Project{Dir: dir}
+	p := Project{Dir: dir, Memories: s.memoryCount(dir)}
 	for _, f := range files {
 		if f.IsDir() || filepath.Ext(f.Name()) != ".jsonl" {
 			continue

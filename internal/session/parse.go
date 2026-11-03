@@ -194,7 +194,7 @@ func (d *Decoder) assistant(b *Batch, tools map[string]*Tool, rec *record, ts ti
 			if strings.TrimSpace(bl.Text) == "" {
 				continue
 			}
-			b.Entries = append(b.Entries, Entry{Kind: KindText, Time: ts, Text: bl.Text, HTML: d.render(bl.Text)})
+			b.Entries = append(b.Entries, Entry{Kind: KindText, Time: ts, Text: bl.Text, HTML: d.Markdown(bl.Text)})
 		case "thinking":
 			if strings.TrimSpace(bl.Thinking) == "" {
 				continue
@@ -209,8 +209,8 @@ func (d *Decoder) assistant(b *Batch, tools map[string]*Tool, rec *record, ts ti
 	}
 }
 
-// render converts markdown to HTML. Raw HTML in the source is dropped by goldmark's default renderer.
-func (d *Decoder) render(src string) template.HTML {
+// Markdown converts markdown to HTML. Raw HTML in the source is dropped by goldmark's default renderer.
+func (d *Decoder) Markdown(src string) template.HTML {
 	var buf bytes.Buffer
 	if err := d.md.Convert([]byte(src), &buf); err != nil {
 		return template.HTML(template.HTMLEscapeString(src))

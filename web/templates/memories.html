@@ -1,0 +1,28 @@
+{{define "title"}}Memory · {{.Project.Name}} · wakeview{{end}}
+
+{{define "crumbs"}}<span class="sep">/</span><span>{{.Project.Name}}</span>{{end}}
+
+{{define "content"}}
+{{- with .Project}}
+<h1>{{.Name}}{{if .Missing}} <span class="badge">directory missing</span>{{end}}</h1>
+<nav class="tabs"><a href="/p/{{.Dir}}">Sessions ({{len .Sessions}})</a><span class="active">Memory ({{.Memories}})</span></nav>
+{{- end}}
+{{- $dir := .Project.Dir}}
+{{- if .HasIndex}}<p class="index-link"><a href="/p/{{$dir}}/memory/{{.IndexFile}}">{{.IndexFile}}</a> <span class="muted">index loaded into every session</span></p>{{end}}
+{{- if not .Memories}}
+<p class="empty">No memory.</p>
+{{- else}}
+<table class="list">
+  <thead><tr><th>Memory</th><th>Type</th><th>Modified</th></tr></thead>
+  <tbody>
+  {{- range .Memories}}
+    <tr>
+      <td><a href="/p/{{$dir}}/memory/{{.File}}">{{.Title}}</a>{{if .Description}}<div class="desc">{{.Description}}</div>{{end}}</td>
+      <td>{{if .Type}}<span class="type-badge">{{.Type}}</span>{{end}}</td>
+      <td class="nowrap">{{fmtTime .Modified}}</td>
+    </tr>
+  {{- end}}
+  </tbody>
+</table>
+{{- end}}
+{{end}}

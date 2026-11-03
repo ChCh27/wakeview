@@ -1,0 +1,15 @@
+{{define "title"}}{{.Memory.Title}} · wakeview{{end}}
+
+{{define "crumbs"}}<span class="sep">/</span><a href="/p/{{.Project.Dir}}">{{.Project.Name}}</a><span class="sep">/</span><a href="/p/{{.Project.Dir}}/memory">memory</a>{{end}}
+
+{{define "content"}}
+{{- with .Memory}}
+<h1>{{.Title}}</h1>
+<div class="session-meta">
+  {{- if .Type}}<span class="type-badge">{{.Type}}</span> · {{end}}{{fmtTime .Modified}} · {{.File}}
+  {{- if $.Origin}} · <a href="{{$.Origin}}">origin session</a>{{else if .OriginSession}} · origin session {{.OriginSession}} (deleted){{end}}
+</div>
+{{- if .Description}}<p class="desc">{{.Description}}</p>{{end}}
+{{- end}}
+<div class="md memory-body">{{.HTML}}</div>
+{{end}}
