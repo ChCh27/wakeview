@@ -1,0 +1,26 @@
+{{define "title"}}Delete · {{.Summary.Title}} · wakeview{{end}}
+
+{{define "crumbs"}}<span class="sep">/</span><a href="/p/{{.Project.Dir}}">{{.Project.Name}}</a>{{end}}
+
+{{define "content"}}
+<h1>Delete session?</h1>
+<p><a href="{{.Base}}">{{.Summary.Title}}</a></p>
+{{- if .Active}}
+<p class="warn">This session changed less than 5 minutes ago and may still be running. Claude Code would write it again, so it can't be deleted now.</p>
+<p><a href="{{.Base}}">Back to the session</a></p>
+{{- else}}
+<p>These go to the wakeview trash, where you can restore them or delete them for good:</p>
+<table class="list">
+  <tbody>
+  {{- range .Items}}
+    <tr><td class="path">{{.Path}}</td><td class="num nowrap">{{fmtBytes .Size}}</td></tr>
+  {{- end}}
+    <tr><td><strong>Total</strong></td><td class="num nowrap"><strong>{{fmtBytes .Total}}</strong></td></tr>
+  </tbody>
+</table>
+<form class="actions" method="post" action="{{.Base}}/delete">
+  <button type="submit" class="danger">Delete</button>
+  <a href="{{.Base}}">Cancel</a>
+</form>
+{{- end}}
+{{end}}

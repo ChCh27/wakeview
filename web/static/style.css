@@ -107,6 +107,26 @@ tr.missing a { color: var(--muted); text-decoration: line-through; }
 .memory-body { margin-top: 16px; }
 .md a[href="#broken"] { color: var(--muted); text-decoration: line-through; pointer-events: none; }
 
+.trash-link { margin-left: auto; font-size: 13px; }
+.delete-link { margin-left: auto; color: var(--danger); }
+
+.warn { color: var(--danger); }
+.path { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+.actions { display: flex; align-items: center; gap: 16px; margin-top: 16px; }
+form.inline { display: inline; }
+button {
+  font: inherit;
+  font-size: 13px;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+button:hover { background: var(--panel); }
+button.danger { color: var(--danger); border-color: var(--danger); }
+
 .total { margin: -8px 0 16px; color: var(--muted); }
 .total strong { color: var(--fg); }
 

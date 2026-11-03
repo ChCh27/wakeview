@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -37,6 +38,17 @@ var funcs = template.FuncMap{
 			return "—"
 		}
 		return t.Local().Format("2006-01-02 15:04")
+	},
+	"fmtBytes": func(n int64) string {
+		switch {
+		case n >= 1<<30:
+			return fmt.Sprintf("%.1f GB", float64(n)/(1<<30))
+		case n >= 1<<20:
+			return fmt.Sprintf("%.1f MB", float64(n)/(1<<20))
+		case n >= 1<<10:
+			return fmt.Sprintf("%.1f KB", float64(n)/(1<<10))
+		}
+		return fmt.Sprintf("%d B", n)
 	},
 	"fmtCost": func(usd float64) string {
 		return fmt.Sprintf("$%.2f", usd)
@@ -70,7 +82,7 @@ func New(store *session.Store) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, page := range []string{"projects", "sessions", "session", "memories", "memory"} {
+	for _, page := range []string{"projects", "sessions", "session", "memories", "memory", "delete", "trash"} {
 		t, err := template.New("").Funcs(funcs).ParseFS(web.FS, "templates/base.html", "templates/partials.html", "templates/"+page+".html")
 		if err != nil {
 			return nil, err
@@ -97,6 +109,11 @@ func New(store *session.Store) (*Server, error) {
 	s.mux.HandleFunc("GET /p/{dir}/memory/{file}", s.handleMemory)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}", s.handleSession)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/events", s.handleEvents)
+	s.mux.HandleFunc("GET /p/{dir}/s/{id}/delete", s.handleDeleteConfirm)
+	s.mux.HandleFunc("POST /p/{dir}/s/{id}/delete", sameOrigin(s.handleDelete))
+	s.mux.HandleFunc("GET /trash", s.handleTrash)
+	s.mux.HandleFunc("POST /trash/{tid}/restore", sameOrigin(s.handleRestore))
+	s.mux.HandleFunc("POST /trash/{tid}/purge", sameOrigin(s.handlePurge))
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/export.md", s.handleExportMarkdown)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/export.html", s.handleExportHTML)
 	return s, nil
@@ -217,6 +234,101 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 		"Base":    base,
 		"Events":  fmt.Sprintf("%s/events?offset=%d", base, batch.Offset),
 	})
+}
+
+func (s *Server) handleDeleteConfirm(w http.ResponseWriter, r *http.Request) {
+	dir, id := r.PathValue("dir"), r.PathValue("id")
+	p, err := s.store.Project(dir)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	sum, _, err := s.store.Session(dir, id)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	items, err := s.store.SessionItems(dir, id)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	active, err := s.store.Active(dir, id)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	var total int64
+	for _, it := range items {
+		total += it.Size
+	}
+	s.render(w, "delete", map[string]any{
+		"Project": p,
+		"Summary": sum,
+		"Items":   items,
+		"Total":   total,
+		"Active":  active,
+		"Base":    fmt.Sprintf("/p/%s/s/%s", url.PathEscape(dir), url.PathEscape(id)),
+	})
+}
+
+func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
+	dir := r.PathValue("dir")
+	if err := s.store.Delete(dir, r.PathValue("id")); err != nil {
+		s.fail(w, err)
+		return
+	}
+	http.Redirect(w, r, "/p/"+url.PathEscape(dir), http.StatusSeeOther)
+}
+
+func (s *Server) handleTrash(w http.ResponseWriter, r *http.Request) {
+	items, err := s.store.Trash()
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	s.render(w, "trash", items)
+}
+
+func (s *Server) handleRestore(w http.ResponseWriter, r *http.Request) {
+	t, err := s.store.Restore(r.PathValue("tid"))
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	http.Redirect(w, r, fmt.Sprintf("/p/%s/s/%s", url.PathEscape(t.ProjectDir), url.PathEscape(t.SessionID)), http.StatusSeeOther)
+}
+
+func (s *Server) handlePurge(w http.ResponseWriter, r *http.Request) {
+	if err := s.store.Purge(r.PathValue("tid")); err != nil {
+		s.fail(w, err)
+		return
+	}
+	http.Redirect(w, r, "/trash", http.StatusSeeOther)
+}
+
+// sameOrigin rejects requests that did not come from a wakeview page: another site open in the
+// browser could otherwise post a form to localhost.
+func sameOrigin(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		host, _, err := net.SplitHostPort(r.Host)
+		if err != nil {
+			host = r.Host
+		}
+		ok := host == "127.0.0.1" || host == "localhost"
+		if origin := r.Header.Get("Origin"); origin != "" {
+			u, err := url.Parse(origin)
+			ok = ok && err == nil && u.Host == r.Host
+		}
+		if site := r.Header.Get("Sec-Fetch-Site"); site != "" {
+			ok = ok && site == "same-origin"
+		}
+		if !ok {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		next(w, r)
+	}
 }
 
 func (s *Server) handleExportMarkdown(w http.ResponseWriter, r *http.Request) {
@@ -402,6 +514,10 @@ func (s *Server) render(w http.ResponseWriter, page string, data any) {
 func (s *Server) fail(w http.ResponseWriter, err error) {
 	if errors.Is(err, session.ErrNotFound) {
 		http.NotFound(w, nil)
+		return
+	}
+	if errors.Is(err, session.ErrActive) || errors.Is(err, session.ErrConflict) {
+		http.Error(w, err.Error(), http.StatusConflict)
 		return
 	}
 	log.Print(err)

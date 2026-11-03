@@ -1,0 +1,27 @@
+{{define "title"}}Trash · wakeview{{end}}
+
+{{define "crumbs"}}<span class="sep">/</span><span>Trash</span>{{end}}
+
+{{define "content"}}
+<h1>Trash</h1>
+{{- if not .}}
+<p class="empty">Trash is empty.</p>
+{{- else}}
+<table class="list">
+  <thead><tr><th>Session</th><th>Deleted</th><th class="num">Size</th><th></th></tr></thead>
+  <tbody>
+  {{- range .}}
+    <tr>
+      <td>{{.Title}}<div class="desc">{{.ProjectName}}</div></td>
+      <td class="nowrap">{{fmtTime .DeletedAt}}</td>
+      <td class="num nowrap">{{fmtBytes .Size}}</td>
+      <td class="nowrap">
+        <form class="inline" method="post" action="/trash/{{.ID}}/restore"><button type="submit">Restore</button></form>
+        <form class="inline" method="post" action="/trash/{{.ID}}/purge" onsubmit="return confirm('Delete this session for good? This cannot be undone.')"><button type="submit" class="danger">Delete forever</button></form>
+      </td>
+    </tr>
+  {{- end}}
+  </tbody>
+</table>
+{{- end}}
+{{end}}

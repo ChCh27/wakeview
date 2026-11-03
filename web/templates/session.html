@@ -10,6 +10,7 @@
   <button type="submit" formaction="{{.Base}}/export.md">Markdown</button>
   <button type="submit" formaction="{{.Base}}/export.html">HTML</button>
   <label><input type="checkbox" name="noresults" value="1"> without tool results</label>
+  <a class="delete-link" href="{{.Base}}/delete">Delete session</a>
 </form>
 {{template "stats" .Summary.Stats}}
 <div id="log" data-events="{{.Events}}">{{template "entries" .Entries}}</div>
