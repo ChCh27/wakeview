@@ -119,7 +119,17 @@ func New(store *session.Store) (*Server, error) {
 	return s, nil
 }
 
+// ServeHTTP answers only requests addressed to localhost. A site that points its own domain
+// at 127.0.0.1 (DNS rebinding) sends its domain in Host and is refused, so it can't read sessions.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	host, _, err := net.SplitHostPort(r.Host)
+	if err != nil {
+		host = r.Host
+	}
+	if host != "127.0.0.1" && host != "localhost" {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
 	s.mux.ServeHTTP(w, r)
 }
 
@@ -311,11 +321,7 @@ func (s *Server) handlePurge(w http.ResponseWriter, r *http.Request) {
 // browser could otherwise post a form to localhost.
 func sameOrigin(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		host, _, err := net.SplitHostPort(r.Host)
-		if err != nil {
-			host = r.Host
-		}
-		ok := host == "127.0.0.1" || host == "localhost"
+		ok := true
 		if origin := r.Header.Get("Origin"); origin != "" {
 			u, err := url.Parse(origin)
 			ok = ok && err == nil && u.Host == r.Host
