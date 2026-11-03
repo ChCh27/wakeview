@@ -32,6 +32,15 @@
 </section>
 {{end}}
 
+{{define "filters"}}
+<div class="filters">
+  <label><input type="checkbox" data-filter="tools" checked> Tool calls</label>
+  <label><input type="checkbox" data-filter="thinking" checked> Thinking</label>
+  <button type="button" data-expand="1">Expand all</button>
+  <button type="button" data-expand="0">Collapse all</button>
+</div>
+{{end}}
+
 {{define "entries"}}{{range .}}{{template "entry" .}}{{end}}{{end}}
 
 {{define "entry"}}

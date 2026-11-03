@@ -7,7 +7,7 @@ wakeview reads the session files Claude Code keeps in `~/.claude/projects` and s
 - **Projects**: every project with its session count, memory count, cost and last activity. Projects whose directory no longer exists on disk are marked.
 - **Sessions**: each session's title, start time, last update, message count and cost.
 - **Stats**: per session, the cost, duration, lines changed and tokens by model. Costs are Claude Code's own estimate at API prices, not what a subscription is billed.
-- **Transcript**: your prompts and Claude's replies (rendered markdown). Tool calls and thinking are collapsed; open a tool call to see its input and result.
+- **Transcript**: your prompts and Claude's replies (rendered markdown). Tool calls and thinking are collapsed; open a tool call to see its input and result. Filters hide tool calls or thinking and expand or collapse them all; the browser remembers the filters.
 - **Subagents**: a session lists its subagents, and the tool call that launched one links to its transcript.
 - **Memory**: a project's memory files with their type, description and the session that created them. `[[name]]` links lead to the memory they name; links to missing memories are greyed out.
 - **Search**: case-insensitive search across prompts, replies and memory, optionally also tool calls and within one project. All words must occur in the same message; a result opens the session at that message.

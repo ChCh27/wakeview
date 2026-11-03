@@ -1,15 +1,42 @@
 (() => {
-  // Opening a search result: unfold the collapsed blocks around the target and bring it into view.
+  const log = document.getElementById('log');
+
+  // Transcript filters: hiding is done by a class on #log, so entries added live follow it too.
+  const KEY = 'wakeview.filters';
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
+  for (const box of document.querySelectorAll('[data-filter]')) {
+    const name = box.dataset.filter;
+    box.checked = saved[name] !== false;
+    const apply = () => log?.classList.toggle('hide-' + name, !box.checked);
+    apply();
+    box.addEventListener('change', () => {
+      apply();
+      saved[name] = box.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch {}
+    });
+  }
+  for (const btn of document.querySelectorAll('[data-expand]')) {
+    btn.addEventListener('click', () => {
+      const open = btn.dataset.expand === '1';
+      for (const d of log?.querySelectorAll('details.tool, details.thinking') || []) d.open = open;
+    });
+  }
+
+  // Opening a search result: unfold the collapsed blocks around the target and bring it into view,
+  // even when a filter hides that kind of block.
   const target = location.hash && document.getElementById(location.hash.slice(1));
   if (target) {
     for (let el = target; el; el = el.parentElement?.closest('details')) {
-      if (el.tagName === 'DETAILS') el.open = true;
+      if (el.tagName === 'DETAILS') {
+        el.open = true;
+        el.classList.add('forced');
+      }
     }
     target.scrollIntoView({ block: 'center' });
     target.classList.add('flash');
   }
 
-  const log = document.getElementById('log');
   if (!log || !log.dataset.events) return;
 
   const atBottom = () => window.innerHeight + window.scrollY >= document.body.scrollHeight - 80;
