@@ -15,6 +15,8 @@ type column struct {
 	Label string
 	Num   bool
 	Desc  bool
+	// Help is the anchor of the help section about this column.
+	Help string
 }
 
 // header is a column as the template draws it: a link that sorts by the column.
@@ -23,6 +25,7 @@ type header struct {
 	URL   string
 	Arrow string
 	Num   bool
+	Help  string
 }
 
 // listParams are the sort and filter settings of a list page, all taken from the URL.
@@ -75,7 +78,7 @@ func headers(base string, p listParams, cols []column) []header {
 	var out []header
 	for _, c := range cols {
 		desc := c.Desc
-		h := header{Label: c.Label, Num: c.Num}
+		h := header{Label: c.Label, Num: c.Num, Help: c.Help}
 		if c.Key == p.Sort {
 			desc = !p.Desc
 			h.Arrow = "▲"
@@ -100,7 +103,7 @@ var projectColumns = []column{
 	{Key: "name", Label: "Project"},
 	{Key: "sessions", Label: "Sessions", Num: true, Desc: true},
 	{Key: "memory", Label: "Memory", Num: true, Desc: true},
-	{Key: "cost", Label: "Cost (API est.)", Num: true, Desc: true},
+	{Key: "cost", Label: "Cost (API est.)", Num: true, Desc: true, Help: "cost"},
 	{Key: "updated", Label: "Last active", Desc: true},
 }
 
@@ -131,8 +134,8 @@ var sessionColumns = []column{
 	{Key: "title", Label: "Session"},
 	{Key: "started", Label: "Started", Desc: true},
 	{Key: "updated", Label: "Updated", Desc: true},
-	{Key: "messages", Label: "Messages", Num: true, Desc: true},
-	{Key: "cost", Label: "Cost (API est.)", Num: true, Desc: true},
+	{Key: "messages", Label: "Messages", Num: true, Desc: true, Help: "messages"},
+	{Key: "cost", Label: "Cost (API est.)", Num: true, Desc: true, Help: "cost"},
 }
 
 func filterSessions(all []session.Summary, p listParams) []session.Summary {

@@ -1,0 +1,49 @@
+{{define "title"}}Help · wakeview{{end}}
+
+{{define "crumbs"}}<span class="sep">/</span><span>Help</span>{{end}}
+
+{{define "content"}}
+<h1>Help</h1>
+<div class="md help-page">
+
+<h2 id="cost">Cost (API est.)</h2>
+<p>Claude Code writes <code>cost-state</code> records into the session file with running totals: cost, tokens per model, time and lines changed. wakeview shows those totals. They include subagents and background calls such as title generation.</p>
+<p>The cost is Claude Code's own estimate at API prices. On a Pro or Max subscription you are not billed this amount.</p>
+<p>Each Claude Code process counts from zero, so a session continued with <code>--resume</code> has several sets of totals; wakeview adds them up. A session with no <code>cost-state</code> records shows "—".</p>
+
+<h2 id="duration">Duration and API time</h2>
+<p><strong>Duration</strong> is how long Claude Code ran for the session, including the time it waited for you. <strong>API time</strong> is the part spent waiting for the model to respond.</p>
+<p><strong>Tokens</strong>: <em>Input</em> and <em>Output</em> are tokens sent and generated; <em>Cache read</em> and <em>Cache write</em> are prompt-cache tokens read and stored.</p>
+
+<h2 id="messages">Messages</h2>
+<p>The count of your prompts and Claude's text replies. Tool calls and thinking are not counted.</p>
+
+<h2 id="missing">Directory missing</h2>
+<p>The name of a project directory under <code>~/.claude/projects</code> can't be turned back into a path reliably, so wakeview takes the path from the <code>cwd</code> field of the session records and checks that it exists on disk. When it doesn't, the project is marked <span class="badge">directory missing</span>. Its sessions are still readable.</p>
+
+<h2 id="instructions">Instructions</h2>
+<p>The CLAUDE.md files Claude Code loads into a session, in load order:</p>
+<ul>
+  <li><strong>global</strong>: <code>~/.claude/CLAUDE.md</code> and <code>~/.claude/rules/*.md</code>, for every project;</li>
+  <li><strong>parent</strong>: <code>CLAUDE.md</code> and <code>CLAUDE.local.md</code> in the directories above the project;</li>
+  <li><strong>project</strong>: <code>CLAUDE.md</code>, <code>.claude/CLAUDE.md</code> and <code>.claude/rules/*.md</code> in the project;</li>
+  <li><strong>local</strong>: <code>CLAUDE.local.md</code> in the project.</li>
+</ul>
+<p>Git marks: <strong>tracked</strong> files are committed and everyone who clones the repository gets them; <strong>tracked · modified</strong> have uncommitted changes; <strong>untracked</strong> files are in a repository but not in git, so only you have them. No mark means the file is outside any repository. <code>@path</code> imports and CLAUDE.md files in subdirectories are not shown.</p>
+
+<h2 id="search">Search</h2>
+<p>Case-insensitive; all words must occur in the same message. Prompts, replies and memory are searched; tick <em>include tool calls</em> to also search tool inputs and results. Thinking and subagent transcripts are not searched. Right after wakeview starts, the first search can take a couple of seconds while it reads the sessions.</p>
+
+<h2 id="live">Live updates</h2>
+<p>An open session page shows new messages as Claude Code writes them. When you are at the bottom of the page, it scrolls to follow them.</p>
+
+<h2 id="rename">Rename</h2>
+<p>wakeview appends the same <code>custom-title</code> record Claude Code writes for <code>/rename</code>, so <code>/resume</code> shows the new name too. The rest of the file is not changed.</p>
+
+<h2 id="trash">Trash</h2>
+<p>Deleting a session moves its transcript, its <code>&lt;id&gt;/</code> directory (subagents, large tool results), <code>file-history/&lt;id&gt;</code> and <code>session-env/&lt;id&gt;</code> to <code>~/.claude/wakeview-trash/</code>. Deleting a project moves its whole directory under <code>~/.claude/projects</code> and every session's file-history and session-env. The project's working directory is never touched.</p>
+<p><strong>Restore</strong> moves everything back; it refuses when something already exists at the original place, for example when Claude Code has created the project directory again. <strong>Delete forever</strong> removes the files for good.</p>
+<p>A session changed less than 5 minutes ago may still be running, and Claude Code would write it again, so it can't be renamed or deleted until then. The same applies to a project with such a session.</p>
+
+</div>
+{{end}}

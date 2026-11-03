@@ -4,7 +4,7 @@
 
 {{define "content"}}
 {{- with .Project}}
-<h1>{{.Name}}{{if .Missing}} <span class="badge">directory missing</span>{{end}}</h1>
+<h1>{{.Name}}{{if .Missing}} <span class="badge">directory missing</span>{{template "help" "missing"}}{{end}}</h1>
 <nav class="tabs"><a href="/p/{{.Dir}}">Sessions ({{len .Sessions}})</a><span class="active">Memory ({{.Memories}})</span><a href="/p/{{.Dir}}/instructions">Instructions ({{.Instructions}})</a><a class="delete-link" href="/p/{{.Dir}}/delete">Delete project</a></nav>
 {{- end}}
 {{- $dir := .Project.Dir}}

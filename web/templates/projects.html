@@ -5,7 +5,7 @@
 {{- if not .Total}}
 <p class="empty">No projects found.</p>
 {{- else}}
-{{- if .CostKnown}}<p class="total">Total cost (API est.): <strong>{{fmtCost .CostUSD}}</strong></p>{{end}}
+{{- if .CostKnown}}<p class="total">Total cost (API est.){{template "help" "cost"}}: <strong>{{fmtCost .CostUSD}}</strong></p>{{end}}
 <form class="list-filter" action="/" method="get">
   <input type="search" name="q" value="{{.List.Query}}" placeholder="Filter by path">
   <label><input type="checkbox" name="missing" value="1"{{if .List.Missing}} checked{{end}}> only missing directories</label>
@@ -22,7 +22,7 @@
   <tbody>
   {{- range .Projects}}
     <tr{{if .Missing}} class="missing"{{end}}>
-      <td><a href="/p/{{.Dir}}">{{.Name}}</a>{{if .Missing}} <span class="badge">directory missing</span>{{end}}</td>
+      <td><a href="/p/{{.Dir}}">{{.Name}}</a>{{if .Missing}} <span class="badge">directory missing</span>{{template "help" "missing"}}{{end}}</td>
       <td class="num">{{len .Sessions}}</td>
       <td class="num">{{if .Memories}}<a href="/p/{{.Dir}}/memory">{{.Memories}}</a>{{else}}—{{end}}</td>
       <td class="num">{{if .CostKnown}}{{fmtCost .CostUSD}}{{else}}—{{end}}</td>

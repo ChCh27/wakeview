@@ -2,15 +2,15 @@
 <section class="stats">
   {{- if .Known}}
   <div class="stat-row">
-    <div class="stat"><div class="stat-label">Cost (API est.)</div><div class="stat-value">{{fmtCost .CostUSD}}</div></div>
-    <div class="stat"><div class="stat-label">Duration</div><div class="stat-value">{{fmtDuration .Duration}}</div></div>
-    <div class="stat"><div class="stat-label">API time</div><div class="stat-value">{{fmtDuration .APIDuration}}</div></div>
+    <div class="stat"><div class="stat-label">Cost (API est.){{template "help" "cost"}}</div><div class="stat-value">{{fmtCost .CostUSD}}</div></div>
+    <div class="stat"><div class="stat-label">Duration{{template "help" "duration"}}</div><div class="stat-value">{{fmtDuration .Duration}}</div></div>
+    <div class="stat"><div class="stat-label">API time{{template "help" "duration"}}</div><div class="stat-value">{{fmtDuration .APIDuration}}</div></div>
     <div class="stat"><div class="stat-label">Lines</div><div class="stat-value"><span class="added">+{{.LinesAdded}}</span> <span class="removed">−{{.LinesRemoved}}</span></div></div>
   </div>
   {{- if .Models}}
   <div class="table-wrap">
   <table class="list models">
-    <thead><tr><th>Model</th><th class="num">Input</th><th class="num">Output</th><th class="num">Cache read</th><th class="num">Cache write</th><th class="num">Cost</th></tr></thead>
+    <thead><tr><th>Model{{template "help" "duration"}}</th><th class="num">Input</th><th class="num">Output</th><th class="num">Cache read</th><th class="num">Cache write</th><th class="num">Cost</th></tr></thead>
     <tbody>
     {{- range .Models}}
       <tr>
@@ -45,7 +45,9 @@
 </section>
 {{end}}
 
-{{define "headers"}}{{range .}}<th{{if .Num}} class="num"{{end}}><a class="sort{{if .Arrow}} active{{end}}" href="{{.URL}}">{{.Label}}{{with .Arrow}} {{.}}{{end}}</a></th>{{end}}{{end}}
+{{define "headers"}}{{range .}}<th{{if .Num}} class="num"{{end}}><a class="sort{{if .Arrow}} active{{end}}" href="{{.URL}}">{{.Label}}{{with .Arrow}} {{.}}{{end}}</a>{{with .Help}}{{template "help" .}}{{end}}</th>{{end}}{{end}}
+
+{{define "help"}} <a class="help" href="/help#{{.}}" title="What is this?">?</a>{{end}}
 
 {{define "filters"}}
 <div class="filters">

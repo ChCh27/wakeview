@@ -190,6 +190,25 @@ a.sort { color: inherit; }
 a.sort.active { color: var(--fg); font-weight: 600; }
 
 .total { margin: -8px 0 16px; color: var(--muted); }
+
+a.help {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  line-height: 13px;
+  margin-left: 3px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  vertical-align: middle;
+  text-decoration: none;
+}
+a.help:hover { color: var(--accent); border-color: var(--accent); }
+.help-page h2 { scroll-margin-top: 16px; }
+.help-page h2:target { color: var(--accent); }
 .total strong { color: var(--fg); }
 
 .stats { margin: 0 0 24px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }

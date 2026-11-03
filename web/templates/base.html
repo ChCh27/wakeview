@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<header class="top"><a href="/" class="logo">wakeview</a>{{block "crumbs" .}}{{end}}<form class="top-search" action="/search" method="get"><input type="search" name="q" placeholder="Search"></form><a href="/trash" class="trash-link">Trash</a></header>
+<header class="top"><a href="/" class="logo">wakeview</a>{{block "crumbs" .}}{{end}}<form class="top-search" action="/search" method="get"><input type="search" name="q" placeholder="Search"></form><a href="/trash" class="trash-link">Trash</a><a href="/help" class="trash-link">Help</a></header>
 <main>{{template "content" .}}</main>
 <script src="/static/app.js"></script>
 </body>

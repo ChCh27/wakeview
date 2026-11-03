@@ -5,7 +5,7 @@
 {{define "content"}}
 <h1>{{.Summary.Title}}</h1>
 <details class="rename">
-  <summary>Rename</summary>
+  <summary>Rename</summary>{{template "help" "rename"}}
   {{- if .Active}}
   <p class="warn">This session changed less than 5 minutes ago and may still be running. Claude Code would write its old name again, so it can't be renamed now.</p>
   {{- else}}

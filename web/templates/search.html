@@ -12,6 +12,7 @@
   </select>
   <label><input type="checkbox" name="tools" value="1"{{if .Options.Tools}} checked{{end}}> include tool calls</label>
   <button type="submit">Search</button>
+  {{- template "help" "search"}}
 </form>
 {{- if .Options.Query}}
 <p class="muted">{{.Hits}} matches in {{len .Sessions}} sessions, {{len .Memories}} memories · {{.Elapsed}}</p>

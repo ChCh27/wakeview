@@ -3,7 +3,7 @@
 {{define "crumbs"}}<span class="sep">/</span><span>Trash</span>{{end}}
 
 {{define "content"}}
-<h1>Trash</h1>
+<h1>Trash{{template "help" "trash"}}</h1>
 {{- if not .}}
 <p class="empty">Trash is empty.</p>
 {{- else}}

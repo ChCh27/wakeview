@@ -4,7 +4,7 @@
 
 {{define "content"}}
 <h1>Global instructions</h1>
-<p class="muted">Loaded into every session, before the project's own files.</p>
+<p class="muted">Loaded into every session, before the project's own files.{{template "help" "instructions"}}</p>
 {{- if not .Files}}
 <p class="empty">No global instruction files.</p>
 {{- end}}
