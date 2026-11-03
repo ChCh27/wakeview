@@ -75,6 +75,19 @@ tr.missing a { color: var(--muted); text-decoration: line-through; }
 
 .session-meta { color: var(--muted); font-size: 13px; margin: -8px 0 20px; overflow-wrap: anywhere; }
 
+.total { margin: -8px 0 16px; color: var(--muted); }
+.total strong { color: var(--fg); }
+
+.stats { margin: 0 0 24px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+.stat-row { display: flex; flex-wrap: wrap; gap: 12px 32px; }
+.stat-label { font-size: 12px; color: var(--muted); }
+.stat-value { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.added { color: #15803d; }
+.removed { color: var(--danger); }
+.table-wrap { overflow-x: auto; margin-top: 12px; }
+.models { font-size: 13px; font-variant-numeric: tabular-nums; }
+.models td:first-child { font-family: var(--mono); }
+
 .msg { margin: 16px 0; }
 .meta { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
 .prompt .body, .prompt .shot { background: var(--prompt); border-radius: 8px; padding: 10px 12px; }

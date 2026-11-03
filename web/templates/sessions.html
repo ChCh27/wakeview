@@ -8,7 +8,7 @@
 <p class="empty">No sessions.</p>
 {{- else}}
 <table class="list">
-  <thead><tr><th>Session</th><th>Started</th><th>Updated</th><th class="num">Messages</th></tr></thead>
+  <thead><tr><th>Session</th><th>Started</th><th>Updated</th><th class="num">Messages</th><th class="num">Cost (API est.)</th></tr></thead>
   <tbody>
   {{- $dir := .Dir}}
   {{- range .Sessions}}
@@ -17,6 +17,7 @@
       <td class="nowrap">{{fmtTime .Started}}</td>
       <td class="nowrap">{{fmtTime .Updated}}</td>
       <td class="num">{{.Messages}}</td>
+      <td class="num">{{if .Stats.Known}}{{fmtCost .Stats.CostUSD}}{{else}}—{{end}}</td>
     </tr>
   {{- end}}
   </tbody>

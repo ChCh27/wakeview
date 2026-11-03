@@ -28,6 +28,7 @@ type record struct {
 	Operation string          `json:"operation"`
 	Reason    string          `json:"reason"`
 	Content   json.RawMessage `json:"content"`
+	costState
 }
 
 // midTurnText returns a message the user sent while Claude was working.

@@ -20,6 +20,7 @@ type Summary struct {
 	Messages int
 	Started  time.Time
 	Updated  time.Time
+	Stats    Stats
 }
 
 type Project struct {
@@ -30,6 +31,9 @@ type Project struct {
 	Missing  bool
 	Sessions []Summary
 	Updated  time.Time
+	// CostUSD sums the sessions that have cost data; CostKnown is false when none do.
+	CostUSD   float64
+	CostKnown bool
 }
 
 func (p Project) Name() string {
@@ -104,6 +108,12 @@ func (s *Store) Project(dir string) (Project, error) {
 		p.Updated = p.Sessions[0].Updated
 	}
 	for _, sum := range p.Sessions {
+		if sum.Stats.Known {
+			p.CostUSD += sum.Stats.CostUSD
+			p.CostKnown = true
+		}
+	}
+	for _, sum := range p.Sessions {
 		if sum.Cwd != "" {
 			p.Path = sum.Cwd
 			break
@@ -158,6 +168,7 @@ func (s *Store) summary(path string, info fs.FileInfo) (Summary, error) {
 func summarize(f *os.File) (Summary, error) {
 	var sum Summary
 	var custom, ai, first string
+	costs := map[int64]costState{}
 	_, err := readRecords(f, func(rec *record) {
 		if sum.Cwd == "" && rec.Cwd != "" {
 			sum.Cwd = rec.Cwd
@@ -170,6 +181,8 @@ func summarize(f *os.File) (Summary, error) {
 			return
 		}
 		switch rec.Type {
+		case "cost-state":
+			costs[rec.StartTime] = rec.costState
 		case "custom-title":
 			custom = rec.CustomTitle
 		case "ai-title":
@@ -207,6 +220,7 @@ func summarize(f *os.File) (Summary, error) {
 	if sum.Title == "" {
 		sum.Title = "(no prompt)"
 	}
+	sum.Stats = statsFrom(costs)
 	return sum, err
 }
 

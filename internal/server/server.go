@@ -33,6 +33,29 @@ var funcs = template.FuncMap{
 		}
 		return t.Local().Format("2006-01-02 15:04")
 	},
+	"fmtCost": func(usd float64) string {
+		return fmt.Sprintf("$%.2f", usd)
+	},
+	"fmtTokens": func(n int64) string {
+		switch {
+		case n >= 1_000_000:
+			return fmt.Sprintf("%.1fM", float64(n)/1_000_000)
+		case n >= 1_000:
+			return fmt.Sprintf("%.1fk", float64(n)/1_000)
+		}
+		return strconv.FormatInt(n, 10)
+	},
+	"fmtDuration": func(d time.Duration) string {
+		d = d.Round(time.Second)
+		h, m, sec := int(d.Hours()), int(d.Minutes())%60, int(d.Seconds())%60
+		switch {
+		case h > 0:
+			return fmt.Sprintf("%dh %02dm", h, m)
+		case m > 0:
+			return fmt.Sprintf("%dm %02ds", m, sec)
+		}
+		return fmt.Sprintf("%ds", sec)
+	},
 }
 
 func New(store *session.Store) (*Server, error) {
@@ -71,7 +94,13 @@ func (s *Server) handleProjects(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	s.render(w, "projects", projects)
+	var total float64
+	var known bool
+	for _, p := range projects {
+		total += p.CostUSD
+		known = known || p.CostKnown
+	}
+	s.render(w, "projects", map[string]any{"Projects": projects, "CostUSD": total, "CostKnown": known})
 }
 
 func (s *Server) handleSessions(w http.ResponseWriter, r *http.Request) {

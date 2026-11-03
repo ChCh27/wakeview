@@ -2,16 +2,18 @@
 
 {{define "content"}}
 <h1>Projects</h1>
-{{- if not .}}
+{{- if not .Projects}}
 <p class="empty">No projects found.</p>
 {{- else}}
+{{- if .CostKnown}}<p class="total">Total cost (API est.): <strong>{{fmtCost .CostUSD}}</strong></p>{{end}}
 <table class="list">
-  <thead><tr><th>Project</th><th class="num">Sessions</th><th>Last active</th></tr></thead>
+  <thead><tr><th>Project</th><th class="num">Sessions</th><th class="num">Cost (API est.)</th><th>Last active</th></tr></thead>
   <tbody>
-  {{- range .}}
+  {{- range .Projects}}
     <tr{{if .Missing}} class="missing"{{end}}>
       <td><a href="/p/{{.Dir}}">{{.Name}}</a>{{if .Missing}} <span class="badge">directory missing</span>{{end}}</td>
       <td class="num">{{len .Sessions}}</td>
+      <td class="num">{{if .CostKnown}}{{fmtCost .CostUSD}}{{else}}—{{end}}</td>
       <td class="nowrap">{{fmtTime .Updated}}</td>
     </tr>
   {{- end}}

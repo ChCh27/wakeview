@@ -4,8 +4,9 @@ Browse your Claude Code sessions in a local web UI.
 
 wakeview reads the session files Claude Code keeps in `~/.claude/projects` and serves them as web pages on localhost:
 
-- **Projects**: every project with its session count and last activity. Projects whose directory no longer exists on disk are marked.
-- **Sessions**: each session's title, start time, last update and message count.
+- **Projects**: every project with its session count, cost and last activity. Projects whose directory no longer exists on disk are marked.
+- **Sessions**: each session's title, start time, last update, message count and cost.
+- **Stats**: per session, the cost, duration, lines changed and tokens by model. Costs are Claude Code's own estimate at API prices, not what a subscription is billed.
 - **Transcript**: your prompts and Claude's replies (rendered markdown). Tool calls and thinking are collapsed; open a tool call to see its input and result.
 - **Live**: an open transcript picks up new messages while the session is still running.
 
