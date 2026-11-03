@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"io"
 	"io/fs"
 	"log"
 	"net"
@@ -82,7 +83,7 @@ func New(store *session.Store) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, page := range []string{"projects", "sessions", "session", "memories", "memory", "delete", "trash", "search"} {
+	for _, page := range []string{"projects", "sessions", "session", "memories", "memory", "delete", "trash", "search", "agent"} {
 		t, err := template.New("").Funcs(funcs).ParseFS(web.FS, "templates/base.html", "templates/partials.html", "templates/"+page+".html")
 		if err != nil {
 			return nil, err
@@ -109,6 +110,8 @@ func New(store *session.Store) (*Server, error) {
 	s.mux.HandleFunc("GET /p/{dir}/memory/{file}", s.handleMemory)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}", s.handleSession)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/events", s.handleEvents)
+	s.mux.HandleFunc("GET /p/{dir}/s/{id}/agents/{aid}", s.handleAgent)
+	s.mux.HandleFunc("GET /p/{dir}/s/{id}/agents/{aid}/events", s.handleAgentEvents)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/delete", s.handleDeleteConfirm)
 	s.mux.HandleFunc("POST /p/{dir}/s/{id}/delete", sameOrigin(s.handleDelete))
 	s.mux.HandleFunc("GET /search", s.handleSearch)
@@ -237,13 +240,74 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	base := fmt.Sprintf("/p/%s/s/%s", url.PathEscape(dir), url.PathEscape(id))
+	agents, err := s.store.Agents(dir, id)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	base := sessionURL(dir, id)
+	linkAgents(base, &batch)
 	s.render(w, "session", map[string]any{
 		"Project": p,
 		"Summary": sum,
 		"Entries": batch.Entries,
+		"Agents":  agents,
 		"Base":    base,
 		"Events":  fmt.Sprintf("%s/events?offset=%d", base, batch.Offset),
+	})
+}
+
+func (s *Server) handleAgent(w http.ResponseWriter, r *http.Request) {
+	dir, id, aid := r.PathValue("dir"), r.PathValue("id"), r.PathValue("aid")
+	p, err := s.store.Project(dir)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	sum, _, err := s.store.Session(dir, id)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	a, path, err := s.store.Agent(dir, id, aid)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	defer f.Close()
+	batch, err := s.dec.DecodeAgent(f)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	base := sessionURL(dir, id)
+	linkAgents(base, &batch)
+	s.render(w, "agent", map[string]any{
+		"Project": p,
+		"Summary": sum,
+		"Agent":   a,
+		"Entries": batch.Entries,
+		"Base":    base,
+		"Events":  fmt.Sprintf("%s/agents/%s/events?offset=%d", base, url.PathEscape(aid), batch.Offset),
+	})
+}
+
+func sessionURL(dir, id string) string {
+	return fmt.Sprintf("/p/%s/s/%s", url.PathEscape(dir), url.PathEscape(id))
+}
+
+// linkAgents points results that launched a subagent at its page. Subagents of subagents are
+// stored in the same session directory, so one base serves every level.
+func linkAgents(base string, b *session.Batch) {
+	b.EachResult(func(r *session.Result) {
+		if r.AgentID != "" {
+			r.AgentURL = base + "/agents/" + url.PathEscape(r.AgentID)
+		}
 	})
 }
 
@@ -447,14 +511,29 @@ type resultUpdate struct {
 	Error bool   `json:"error"`
 }
 
-// handleEvents streams entries appended to the session file after the given offset.
-// The offset doubles as the SSE event id, so a reconnecting browser resumes where it stopped.
 func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
-	_, path, err := s.store.Session(r.PathValue("dir"), r.PathValue("id"))
+	dir, id := r.PathValue("dir"), r.PathValue("id")
+	_, path, err := s.store.Session(dir, id)
 	if err != nil {
 		s.fail(w, err)
 		return
 	}
+	s.stream(w, r, path, sessionURL(dir, id), s.dec.Decode)
+}
+
+func (s *Server) handleAgentEvents(w http.ResponseWriter, r *http.Request) {
+	dir, id := r.PathValue("dir"), r.PathValue("id")
+	_, path, err := s.store.Agent(dir, id, r.PathValue("aid"))
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	s.stream(w, r, path, sessionURL(dir, id), s.dec.DecodeAgent)
+}
+
+// stream sends entries appended to the file at path after the given offset.
+// The offset doubles as the SSE event id, so a reconnecting browser resumes where it stopped.
+func (s *Server) stream(w http.ResponseWriter, r *http.Request, path, base string, decode func(io.Reader) (session.Batch, error)) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
@@ -495,11 +574,12 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 		if info.Size() == offset {
 			continue
 		}
-		batch, err := s.readFrom(path, offset)
+		batch, err := readFrom(path, offset, decode)
 		if err != nil {
 			log.Printf("events %s: %v", path, err)
 			return
 		}
+		linkAgents(base, &batch)
 		if batch.Offset == 0 {
 			continue
 		}
@@ -527,7 +607,7 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) readFrom(path string, offset int64) (session.Batch, error) {
+func readFrom(path string, offset int64, decode func(io.Reader) (session.Batch, error)) (session.Batch, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return session.Batch{}, err
@@ -536,7 +616,7 @@ func (s *Server) readFrom(path string, offset int64) (session.Batch, error) {
 	if _, err := f.Seek(offset, 0); err != nil {
 		return session.Batch{}, err
 	}
-	return s.dec.Decode(f)
+	return decode(f)
 }
 
 func (s *Server) render(w http.ResponseWriter, page string, data any) {

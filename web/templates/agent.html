@@ -1,0 +1,9 @@
+{{define "title"}}{{.Agent.Title}} · wakeview{{end}}
+
+{{define "crumbs"}}<span class="sep">/</span><a href="/p/{{.Project.Dir}}">{{.Project.Name}}</a><span class="sep">/</span><a href="{{.Base}}">{{.Summary.Title}}</a>{{end}}
+
+{{define "content"}}
+<h1>{{.Agent.Title}}</h1>
+<div class="session-meta">{{if .Agent.Type}}<span class="type-badge">{{.Agent.Type}}</span> · {{end}}subagent of <a href="{{.Base}}">{{.Summary.Title}}</a> · agent-{{.Agent.ID}}</div>
+<div id="log" data-events="{{.Events}}">{{template "entries" .Entries}}</div>
+{{end}}

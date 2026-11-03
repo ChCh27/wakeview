@@ -24,8 +24,10 @@ type record struct {
 	IsSidechain      bool     `json:"isSidechain"`
 	IsCompactSummary bool     `json:"isCompactSummary"`
 	Message          *message `json:"message"`
-	AITitle          string   `json:"aiTitle"`
-	CustomTitle      string   `json:"customTitle"`
+	// ToolUseResult is Claude Code's own summary of a tool result; for a subagent launch it carries agentId.
+	ToolUseResult json.RawMessage `json:"toolUseResult"`
+	AITitle       string          `json:"aiTitle"`
+	CustomTitle   string          `json:"customTitle"`
 	// Operation, Reason and Content describe queue-operation records.
 	Operation string          `json:"operation"`
 	Reason    string          `json:"reason"`
@@ -113,6 +115,21 @@ type Result struct {
 	Images  []Image
 	// Omitted marks a result left out of an export.
 	Omitted bool
+	// AgentID is set when the call launched a subagent; the server fills AgentURL from it.
+	AgentID  string
+	AgentURL string
+}
+
+// EachResult calls fn for every tool result in the batch, attached or not.
+func (b *Batch) EachResult(fn func(*Result)) {
+	for _, e := range b.Entries {
+		if e.Tool != nil && e.Tool.Result != nil {
+			fn(e.Tool.Result)
+		}
+	}
+	for i := range b.Results {
+		fn(&b.Results[i])
+	}
 }
 
 type Image struct {
@@ -147,11 +164,17 @@ func NewDecoder() *Decoder {
 }
 
 func (d *Decoder) Decode(r io.Reader) (Batch, error) {
-	return d.decode(r, true)
+	return d.decode(r, true, false)
 }
 
-// decode reads entries; with render false assistant text is not converted to HTML, which search does not need.
-func (d *Decoder) decode(r io.Reader, render bool) (Batch, error) {
+// DecodeAgent reads a subagent transcript, whose records are all marked as sidechain.
+func (d *Decoder) DecodeAgent(r io.Reader) (Batch, error) {
+	return d.decode(r, true, true)
+}
+
+// decode reads entries. With render false assistant text is not converted to HTML, which search
+// does not need; with sidechain true sidechain records are kept, as a subagent transcript has only those.
+func (d *Decoder) decode(r io.Reader, render, sidechain bool) (Batch, error) {
 	var b Batch
 	tools := map[string]*Tool{}
 	n, err := readRecords(r, func(rec *record) {
@@ -160,7 +183,7 @@ func (d *Decoder) decode(r io.Reader, render bool) (Batch, error) {
 			b.Entries = append(b.Entries, Entry{Kind: KindPrompt, Anchor: queueAnchor(rec.Timestamp), Time: ts, Text: text})
 			return
 		}
-		if rec.IsSidechain || rec.Message == nil {
+		if rec.IsSidechain && !sidechain || rec.Message == nil {
 			return
 		}
 		switch rec.Type {
@@ -184,7 +207,9 @@ func (d *Decoder) user(b *Batch, tools map[string]*Tool, rec *record, ts time.Ti
 		return
 	}
 	texts, images, results := splitUser(bs)
+	agentID := launchedAgent(rec.ToolUseResult)
 	for _, res := range results {
+		res.AgentID = agentID
 		if t := tools[res.ToolID]; t != nil {
 			t.Result = &res
 		} else {
@@ -221,6 +246,17 @@ func (d *Decoder) assistant(b *Batch, tools map[string]*Tool, rec *record, ts ti
 			b.Entries = append(b.Entries, Entry{Kind: KindTool, Anchor: a, Time: ts, Tool: t})
 		}
 	}
+}
+
+// launchedAgent returns the subagent id a tool result reports, if any.
+func launchedAgent(raw json.RawMessage) string {
+	var v struct {
+		AgentID string `json:"agentId"`
+	}
+	if len(raw) == 0 || raw[0] != '{' || json.Unmarshal(raw, &v) != nil || !safeID(v.AgentID) {
+		return ""
+	}
+	return v.AgentID
 }
 
 // anchor builds an element id from a record uuid and, for assistant records, the block position.

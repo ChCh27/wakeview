@@ -105,6 +105,11 @@ tr.missing a { color: var(--muted); text-decoration: line-through; }
   border: 1px solid var(--line);
 }
 .memory-body { margin-top: 16px; }
+
+.agents { margin-bottom: 16px; }
+.agent-list { margin: 0; padding: 8px 12px 8px 28px; font-size: 13px; }
+.agent-list li + li { margin-top: 4px; }
+.agent-link { display: inline-block; margin-bottom: 6px; font-size: 13px; font-weight: 600; }
 .md a[href="#broken"] { color: var(--muted); text-decoration: line-through; pointer-events: none; }
 
 .top-search { margin-left: auto; }

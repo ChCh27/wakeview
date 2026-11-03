@@ -47,7 +47,7 @@
 <details class="block thinking"{{with .Anchor}} id="{{.}}"{{end}}><summary>Thinking</summary><div class="plain">{{.Text}}</div></details>
 {{- else if eq .Kind "tool"}}{{$anchor := .Anchor}}{{with .Tool}}
 <details class="block tool{{if and .Result .Result.IsError}} failed{{end}}"{{with $anchor}} id="{{.}}"{{end}}>
-  <summary><span class="tool-name">{{.Name}}</span>{{if .Hint}} <span class="tool-hint">{{.Hint}}</span>{{end}}</summary>
+  <summary><span class="tool-name">{{.Name}}</span>{{if and .Result .Result.AgentURL}} <span class="type-badge">subagent</span>{{end}}{{if .Hint}} <span class="tool-hint">{{.Hint}}</span>{{end}}</summary>
   <div class="fields">{{range .Input}}<div class="field">{{if .Key}}<div class="key">{{.Key}}</div>{{end}}<pre>{{.Value}}</pre></div>{{end}}</div>
   {{- if .Result}}{{template "result" .Result}}{{else}}<div class="result pending" id="result-{{.ID}}">Waiting for result…</div>{{end}}
 </details>
@@ -58,6 +58,7 @@
 {{end}}
 
 {{define "result"}}<div class="result{{if .IsError}} error{{end}}" id="result-{{.ToolID}}">
+  {{- with .AgentURL}}<a class="agent-link" href="{{.}}">Open subagent →</a>{{end}}
   {{- if .Omitted}}<div class="empty">(result omitted)</div>
   {{- else if .Text}}<pre>{{.Text}}</pre>{{else if not .Images}}<div class="empty">(no output)</div>{{end}}
   {{- range .Images}}<img class="shot" src="{{.URL}}" alt="">{{end}}

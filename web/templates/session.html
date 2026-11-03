@@ -13,5 +13,16 @@
   <a class="delete-link" href="{{.Base}}/delete">Delete session</a>
 </form>
 {{template "stats" .Summary.Stats}}
+{{- if .Agents}}
+{{- $base := .Base}}
+<details class="block agents">
+  <summary>Subagents ({{len .Agents}})</summary>
+  <ul class="agent-list">
+  {{- range .Agents}}
+    <li><a href="{{$base}}/agents/{{.ID}}">{{.Title}}</a>{{if .Type}} <span class="type-badge">{{.Type}}</span>{{end}} <span class="muted">{{.Messages}} messages · {{fmtTime .Updated}}</span></li>
+  {{- end}}
+  </ul>
+</details>
+{{- end}}
 <div id="log" data-events="{{.Events}}">{{template "entries" .Entries}}</div>
 {{end}}

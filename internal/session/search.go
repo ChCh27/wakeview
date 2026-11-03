@@ -141,7 +141,7 @@ func (s *Store) searchEntries(path string) ([]searchEntry, error) {
 		return nil, err
 	}
 	defer f.Close()
-	batch, err := (&Decoder{}).decode(f, false)
+	batch, err := (&Decoder{}).decode(f, false, false)
 	if err != nil {
 		return nil, err
 	}
