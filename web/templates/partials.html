@@ -36,24 +36,24 @@
 
 {{define "entry"}}
 {{- if eq .Kind "prompt"}}
-<div class="msg prompt">
+<div class="msg prompt"{{with .Anchor}} id="{{.}}"{{end}}>
   <div class="meta">You · {{fmtTime .Time}}</div>
   {{- if .Text}}<div class="body plain">{{.Text}}</div>{{end}}
   {{- range .Images}}<img class="shot" src="{{.URL}}" alt="">{{end}}
 </div>
 {{- else if eq .Kind "text"}}
-<div class="msg reply"><div class="body md">{{.HTML}}</div></div>
+<div class="msg reply"{{with .Anchor}} id="{{.}}"{{end}}><div class="body md">{{.HTML}}</div></div>
 {{- else if eq .Kind "thinking"}}
-<details class="block thinking"><summary>Thinking</summary><div class="plain">{{.Text}}</div></details>
-{{- else if eq .Kind "tool"}}{{with .Tool}}
-<details class="block tool{{if and .Result .Result.IsError}} failed{{end}}">
+<details class="block thinking"{{with .Anchor}} id="{{.}}"{{end}}><summary>Thinking</summary><div class="plain">{{.Text}}</div></details>
+{{- else if eq .Kind "tool"}}{{$anchor := .Anchor}}{{with .Tool}}
+<details class="block tool{{if and .Result .Result.IsError}} failed{{end}}"{{with $anchor}} id="{{.}}"{{end}}>
   <summary><span class="tool-name">{{.Name}}</span>{{if .Hint}} <span class="tool-hint">{{.Hint}}</span>{{end}}</summary>
   <div class="fields">{{range .Input}}<div class="field">{{if .Key}}<div class="key">{{.Key}}</div>{{end}}<pre>{{.Value}}</pre></div>{{end}}</div>
   {{- if .Result}}{{template "result" .Result}}{{else}}<div class="result pending" id="result-{{.ID}}">Waiting for result…</div>{{end}}
 </details>
 {{- end}}
 {{- else if eq .Kind "compact"}}
-<details class="block compact"><summary>Context compacted</summary><div class="plain">{{.Text}}</div></details>
+<details class="block compact"{{with .Anchor}} id="{{.}}"{{end}}><summary>Context compacted</summary><div class="plain">{{.Text}}</div></details>
 {{- end}}
 {{end}}
 

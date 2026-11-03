@@ -1,0 +1,53 @@
+{{define "title"}}{{if .Options.Query}}{{.Options.Query}} · {{end}}Search · wakeview{{end}}
+
+{{define "crumbs"}}<span class="sep">/</span><span>Search</span>{{end}}
+
+{{define "content"}}
+<form class="search-form" action="/search" method="get">
+  <input type="search" name="q" value="{{.Options.Query}}" placeholder="Search sessions and memory" autofocus>
+  <select name="project">
+    <option value="">All projects</option>
+    {{- $sel := .Options.Project}}
+    {{- range .Projects}}<option value="{{.Dir}}"{{if eq .Dir $sel}} selected{{end}}>{{.Name}}</option>{{end}}
+  </select>
+  <label><input type="checkbox" name="tools" value="1"{{if .Options.Tools}} checked{{end}}> include tool calls</label>
+  <button type="submit">Search</button>
+</form>
+{{- if .Options.Query}}
+<p class="muted">{{.Hits}} matches in {{len .Sessions}} sessions, {{len .Memories}} memories · {{.Elapsed}}</p>
+
+{{- if .Memories}}
+<h2>Memory</h2>
+<ul class="hits">
+{{- range .Memories}}
+  <li>
+    <a href="/p/{{.Project.Dir}}/memory/{{.Memory.File}}">{{.Memory.Title}}</a>
+    {{- if .Memory.Type}} <span class="type-badge">{{.Memory.Type}}</span>{{end}}
+    <div class="desc">{{.Project.Name}}</div>
+    <div class="snippet">{{template "snippet" .Snippet}}</div>
+  </li>
+{{- end}}
+</ul>
+{{- end}}
+
+{{- if .Sessions}}
+<h2>Sessions</h2>
+<ul class="hits">
+{{- range .Sessions}}
+  {{- $base := printf "/p/%s/s/%s" .Project.Dir .Summary.ID}}
+  <li>
+    <a href="{{$base}}">{{.Summary.Title}}</a> <span class="muted">{{.Count}} {{if eq .Count 1}}match{{else}}matches{{end}}</span>
+    <div class="desc">{{.Project.Name}} · {{fmtTime .Summary.Updated}}</div>
+    {{- range .Hits}}
+    <a class="snippet" href="{{$base}}{{with .Anchor}}#{{.}}{{end}}"><span class="hit-kind">{{if eq .Kind "prompt"}}You{{else if eq .Kind "tool"}}Tool{{else}}Claude{{end}}</span> {{template "snippet" .Snippet}}</a>
+    {{- end}}
+  </li>
+{{- end}}
+</ul>
+{{- end}}
+
+{{- if and (not .Sessions) (not .Memories)}}<p class="empty">Nothing found.</p>{{end}}
+{{- end}}
+{{end}}
+
+{{define "snippet"}}{{.Before}}<mark>{{.Match}}</mark>{{.After}}{{end}}

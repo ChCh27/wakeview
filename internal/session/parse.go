@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"strings"
@@ -16,6 +17,7 @@ import (
 // record is one line of a session .jsonl file. Only the fields wakeview uses are decoded.
 type record struct {
 	Type             string   `json:"type"`
+	UUID             string   `json:"uuid"`
 	Timestamp        string   `json:"timestamp"`
 	Cwd              string   `json:"cwd"`
 	IsMeta           bool     `json:"isMeta"`
@@ -80,7 +82,9 @@ const (
 
 // Entry is one visible item of a session transcript.
 type Entry struct {
-	Kind   Kind
+	Kind Kind
+	// Anchor is the entry's element id on the session page; search results link to it.
+	Anchor string
 	Time   time.Time
 	Text   string
 	HTML   template.HTML
@@ -143,12 +147,17 @@ func NewDecoder() *Decoder {
 }
 
 func (d *Decoder) Decode(r io.Reader) (Batch, error) {
+	return d.decode(r, true)
+}
+
+// decode reads entries; with render false assistant text is not converted to HTML, which search does not need.
+func (d *Decoder) decode(r io.Reader, render bool) (Batch, error) {
 	var b Batch
 	tools := map[string]*Tool{}
 	n, err := readRecords(r, func(rec *record) {
 		ts := parseTime(rec.Timestamp)
 		if text, ok := midTurnText(rec); ok {
-			b.Entries = append(b.Entries, Entry{Kind: KindPrompt, Time: ts, Text: text})
+			b.Entries = append(b.Entries, Entry{Kind: KindPrompt, Anchor: queueAnchor(rec.Timestamp), Time: ts, Text: text})
 			return
 		}
 		if rec.IsSidechain || rec.Message == nil {
@@ -158,7 +167,7 @@ func (d *Decoder) Decode(r io.Reader) (Batch, error) {
 		case "user":
 			d.user(&b, tools, rec, ts)
 		case "assistant":
-			d.assistant(&b, tools, rec, ts)
+			d.assistant(&b, tools, rec, ts, render)
 		}
 	})
 	b.Offset = n
@@ -171,7 +180,7 @@ func (d *Decoder) user(b *Batch, tools map[string]*Tool, rec *record, ts time.Ti
 	}
 	bs := decodeContent(rec.Message.Content)
 	if rec.IsCompactSummary {
-		b.Entries = append(b.Entries, Entry{Kind: KindCompact, Time: ts, Text: joinText(bs)})
+		b.Entries = append(b.Entries, Entry{Kind: KindCompact, Anchor: anchor(rec.UUID, -1), Time: ts, Text: joinText(bs)})
 		return
 	}
 	texts, images, results := splitUser(bs)
@@ -183,30 +192,72 @@ func (d *Decoder) user(b *Batch, tools map[string]*Tool, rec *record, ts time.Ti
 		}
 	}
 	if len(texts) > 0 || len(images) > 0 {
-		b.Entries = append(b.Entries, Entry{Kind: KindPrompt, Time: ts, Text: strings.Join(texts, "\n\n"), Images: images})
+		b.Entries = append(b.Entries, Entry{Kind: KindPrompt, Anchor: anchor(rec.UUID, -1), Time: ts, Text: strings.Join(texts, "\n\n"), Images: images})
 	}
 }
 
-func (d *Decoder) assistant(b *Batch, tools map[string]*Tool, rec *record, ts time.Time) {
-	for _, bl := range decodeContent(rec.Message.Content) {
+func (d *Decoder) assistant(b *Batch, tools map[string]*Tool, rec *record, ts time.Time, render bool) {
+	for i, bl := range decodeContent(rec.Message.Content) {
+		a := anchor(rec.UUID, i)
 		switch bl.Type {
 		case "text":
 			if strings.TrimSpace(bl.Text) == "" {
 				continue
 			}
-			b.Entries = append(b.Entries, Entry{Kind: KindText, Time: ts, Text: bl.Text, HTML: d.Markdown(bl.Text)})
+			e := Entry{Kind: KindText, Anchor: a, Time: ts, Text: bl.Text}
+			if render {
+				e.HTML = d.Markdown(bl.Text)
+			}
+			b.Entries = append(b.Entries, e)
 		case "thinking":
 			if strings.TrimSpace(bl.Thinking) == "" {
 				continue
 			}
-			b.Entries = append(b.Entries, Entry{Kind: KindThinking, Time: ts, Text: bl.Thinking})
+			b.Entries = append(b.Entries, Entry{Kind: KindThinking, Anchor: a, Time: ts, Text: bl.Thinking})
 		case "tool_use":
 			fs := fields(bl.Input)
 			t := &Tool{ID: bl.ID, Name: bl.Name, Input: fs, Hint: hint(fs)}
 			tools[bl.ID] = t
-			b.Entries = append(b.Entries, Entry{Kind: KindTool, Time: ts, Tool: t})
+			b.Entries = append(b.Entries, Entry{Kind: KindTool, Anchor: a, Time: ts, Tool: t})
 		}
 	}
+}
+
+// anchor builds an element id from a record uuid and, for assistant records, the block position.
+func anchor(uuid string, block int) string {
+	if !safeID(uuid) {
+		return ""
+	}
+	if block < 0 {
+		return "e-" + uuid
+	}
+	return fmt.Sprintf("e-%s-%d", uuid, block)
+}
+
+// queueAnchor identifies a mid-turn message, which has no uuid, by its timestamp.
+func queueAnchor(ts string) string {
+	digits := strings.Map(func(r rune) rune {
+		if r >= '0' && r <= '9' {
+			return r
+		}
+		return -1
+	}, ts)
+	if digits == "" {
+		return ""
+	}
+	return "q-" + digits
+}
+
+func safeID(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-') {
+			return false
+		}
+	}
+	return true
 }
 
 // Markdown converts markdown to HTML. Raw HTML in the source is dropped by goldmark's default renderer.

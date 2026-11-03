@@ -1,4 +1,14 @@
 (() => {
+  // Opening a search result: unfold the collapsed blocks around the target and bring it into view.
+  const target = location.hash && document.getElementById(location.hash.slice(1));
+  if (target) {
+    for (let el = target; el; el = el.parentElement?.closest('details')) {
+      if (el.tagName === 'DETAILS') el.open = true;
+    }
+    target.scrollIntoView({ block: 'center' });
+    target.classList.add('flash');
+  }
+
   const log = document.getElementById('log');
   if (!log || !log.dataset.events) return;
 

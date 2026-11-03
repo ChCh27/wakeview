@@ -47,9 +47,10 @@ func (p Project) Name() string {
 
 // Store reads projects and sessions from a Claude Code projects directory.
 type Store struct {
-	root  string
-	mu    sync.Mutex
-	cache map[string]cachedSummary
+	root   string
+	mu     sync.Mutex
+	cache  map[string]cachedSummary
+	search map[string]cachedSearch
 }
 
 type cachedSummary struct {
@@ -59,7 +60,7 @@ type cachedSummary struct {
 }
 
 func NewStore(root string) *Store {
-	return &Store{root: root, cache: map[string]cachedSummary{}}
+	return &Store{root: root, cache: map[string]cachedSummary{}, search: map[string]cachedSearch{}}
 }
 
 func (s *Store) Projects() ([]Project, error) {

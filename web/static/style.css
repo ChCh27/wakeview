@@ -107,7 +107,31 @@ tr.missing a { color: var(--muted); text-decoration: line-through; }
 .memory-body { margin-top: 16px; }
 .md a[href="#broken"] { color: var(--muted); text-decoration: line-through; pointer-events: none; }
 
-.trash-link { margin-left: auto; font-size: 13px; }
+.top-search { margin-left: auto; }
+.trash-link { font-size: 13px; }
+input[type="search"], select {
+  font: inherit;
+  font-size: 13px;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+.top-search input { width: 160px; max-width: 40vw; }
+
+.search-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; }
+.search-form input[type="search"] { flex: 1 1 240px; font-size: 15px; padding: 6px 10px; }
+.search-form select { max-width: 100%; }
+.search-form label { color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+h2 { font-size: 17px; margin: 24px 0 8px; }
+.hits { list-style: none; padding: 0; margin: 0; }
+.hits > li { padding: 10px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.snippet { display: block; margin-top: 4px; font-size: 13px; color: var(--fg); }
+a.snippet:hover { text-decoration: none; background: var(--panel); }
+.hit-kind { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+mark { background: #fde68a; color: #1f2328; border-radius: 2px; }
+.flash { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
 .delete-link { margin-left: auto; color: var(--danger); }
 
 .warn { color: var(--danger); }

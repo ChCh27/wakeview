@@ -21,10 +21,12 @@ func main() {
 	port := flag.Int("port", 7777, "port to listen on (localhost only)")
 	flag.Parse()
 
-	srv, err := server.New(session.NewStore(*dir))
+	store := session.NewStore(*dir)
+	srv, err := server.New(store)
 	if err != nil {
 		log.Fatal(err)
 	}
+	go store.WarmSearch()
 	addr := fmt.Sprintf("127.0.0.1:%d", *port)
 	log.Printf("wakeview: http://%s", addr)
 	log.Fatal(http.ListenAndServe(addr, srv))

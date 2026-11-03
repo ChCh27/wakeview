@@ -82,7 +82,7 @@ func New(store *session.Store) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, page := range []string{"projects", "sessions", "session", "memories", "memory", "delete", "trash"} {
+	for _, page := range []string{"projects", "sessions", "session", "memories", "memory", "delete", "trash", "search"} {
 		t, err := template.New("").Funcs(funcs).ParseFS(web.FS, "templates/base.html", "templates/partials.html", "templates/"+page+".html")
 		if err != nil {
 			return nil, err
@@ -111,6 +111,7 @@ func New(store *session.Store) (*Server, error) {
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/events", s.handleEvents)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/delete", s.handleDeleteConfirm)
 	s.mux.HandleFunc("POST /p/{dir}/s/{id}/delete", sameOrigin(s.handleDelete))
+	s.mux.HandleFunc("GET /search", s.handleSearch)
 	s.mux.HandleFunc("GET /trash", s.handleTrash)
 	s.mux.HandleFunc("POST /trash/{tid}/restore", sameOrigin(s.handleRestore))
 	s.mux.HandleFunc("POST /trash/{tid}/purge", sameOrigin(s.handlePurge))
@@ -289,6 +290,37 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/p/"+url.PathEscape(dir), http.StatusSeeOther)
+}
+
+func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	opt := session.SearchOptions{
+		Query:   strings.TrimSpace(r.URL.Query().Get("q")),
+		Tools:   r.URL.Query().Get("tools") == "1",
+		Project: r.URL.Query().Get("project"),
+	}
+	projects, err := s.store.Projects()
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	start := time.Now()
+	sessions, memories, err := s.store.Search(opt)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	hits := 0
+	for _, sh := range sessions {
+		hits += sh.Count
+	}
+	s.render(w, "search", map[string]any{
+		"Options":  opt,
+		"Projects": projects,
+		"Sessions": sessions,
+		"Memories": memories,
+		"Hits":     hits,
+		"Elapsed":  time.Since(start).Round(time.Millisecond),
+	})
 }
 
 func (s *Server) handleTrash(w http.ResponseWriter, r *http.Request) {
