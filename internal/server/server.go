@@ -83,7 +83,7 @@ func New(store *session.Store) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, page := range []string{"projects", "sessions", "session", "memories", "memory", "delete", "trash", "search", "agent", "instructions", "global"} {
+	for _, page := range []string{"projects", "sessions", "session", "memories", "memory", "delete", "trash", "search", "agent", "instructions", "global", "delete_project"} {
 		t, err := template.New("").Funcs(funcs).ParseFS(web.FS, "templates/base.html", "templates/partials.html", "templates/"+page+".html")
 		if err != nil {
 			return nil, err
@@ -114,6 +114,8 @@ func New(store *session.Store) (*Server, error) {
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/events", s.handleEvents)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/agents/{aid}", s.handleAgent)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/agents/{aid}/events", s.handleAgentEvents)
+	s.mux.HandleFunc("GET /p/{dir}/delete", s.handleDeleteProjectConfirm)
+	s.mux.HandleFunc("POST /p/{dir}/delete", sameOrigin(s.handleDeleteProject))
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/delete", s.handleDeleteConfirm)
 	s.mux.HandleFunc("POST /p/{dir}/s/{id}/delete", sameOrigin(s.handleDelete))
 	s.mux.HandleFunc("GET /search", s.handleSearch)
@@ -419,6 +421,38 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) handleDeleteProjectConfirm(w http.ResponseWriter, r *http.Request) {
+	dir := r.PathValue("dir")
+	p, err := s.store.Project(dir)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	items, err := s.store.ProjectItems(dir)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	var total int64
+	for _, it := range items {
+		total += it.Size
+	}
+	s.render(w, "delete_project", map[string]any{
+		"Project": p,
+		"Items":   items,
+		"Total":   total,
+		"Active":  s.store.ActiveSessions(p),
+	})
+}
+
+func (s *Server) handleDeleteProject(w http.ResponseWriter, r *http.Request) {
+	if err := s.store.DeleteProject(r.PathValue("dir")); err != nil {
+		s.fail(w, err)
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 func (s *Server) handleTrash(w http.ResponseWriter, r *http.Request) {
 	items, err := s.store.Trash()
 	if err != nil {
@@ -434,7 +468,11 @@ func (s *Server) handleRestore(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	http.Redirect(w, r, fmt.Sprintf("/p/%s/s/%s", url.PathEscape(t.ProjectDir), url.PathEscape(t.SessionID)), http.StatusSeeOther)
+	if t.Kind == session.KindTrashProject {
+		http.Redirect(w, r, "/p/"+url.PathEscape(t.ProjectDir), http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, r, sessionURL(t.ProjectDir, t.SessionID), http.StatusSeeOther)
 }
 
 func (s *Server) handlePurge(w http.ResponseWriter, r *http.Request) {

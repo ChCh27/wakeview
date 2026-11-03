@@ -5,7 +5,7 @@
 {{define "content"}}
 {{- with .Project}}
 <h1>{{.Name}}{{if .Missing}} <span class="badge">directory missing</span>{{end}}</h1>
-<nav class="tabs"><a href="/p/{{.Dir}}">Sessions ({{len .Sessions}})</a><a href="/p/{{.Dir}}/memory">Memory ({{.Memories}})</a><span class="active">Instructions ({{.Instructions}})</span></nav>
+<nav class="tabs"><a href="/p/{{.Dir}}">Sessions ({{len .Sessions}})</a><a href="/p/{{.Dir}}/memory">Memory ({{.Memories}})</a><span class="active">Instructions ({{.Instructions}})</span><a class="delete-link" href="/p/{{.Dir}}/delete">Delete project</a></nav>
 {{- if .Missing}}<p class="muted">The project directory no longer exists, so only files outside it are shown.</p>{{end}}
 {{- end}}
 {{- if .Global}}<p class="index-link">Loaded first: <a href="/instructions">global instructions ({{.Global}})</a></p>{{end}}

@@ -16,11 +16,16 @@ import (
 const ActiveWindow = 5 * time.Minute
 
 var (
-	ErrActive   = errors.New("session changed less than 5 minutes ago and may still be running")
+	ErrActive   = errors.New("a session changed less than 5 minutes ago and may still be running")
 	ErrConflict = errors.New("a file already exists where the session would be restored")
 )
 
 const manifestFile = "manifest.json"
+
+const (
+	KindTrashSession = "session"
+	KindTrashProject = "project"
+)
 
 // Item is one file or directory that belongs to a session.
 type Item struct {
@@ -33,7 +38,10 @@ type Item struct {
 
 // Trashed is a session moved to wakeview's trash.
 type Trashed struct {
-	ID          string
+	ID string
+	// Kind is KindTrashSession or KindTrashProject.
+	Kind        string
+	Sessions    int
 	SessionID   string
 	ProjectDir  string
 	ProjectName string
@@ -109,15 +117,89 @@ func (s *Store) Delete(dir, id string) error {
 	if err != nil {
 		return err
 	}
-	t := Trashed{
+	return s.moveToTrash(Trashed{
 		ID:          fmt.Sprintf("%d-%s", time.Now().UnixMilli(), id),
+		Kind:        KindTrashSession,
+		Sessions:    1,
 		SessionID:   id,
 		ProjectDir:  dir,
 		ProjectName: p.Name(),
 		Title:       sum.Title,
 		DeletedAt:   time.Now(),
 		Items:       items,
+	})
+}
+
+// ProjectItems lists what deleting a project would move: its whole directory under projects
+// (sessions, subagents, memory) and every session's file-history and session-env.
+// The project's own working directory is never touched.
+func (s *Store) ProjectItems(dir string) ([]Item, error) {
+	p, err := s.Project(dir)
+	if err != nil {
+		return nil, err
 	}
+	candidates := []Item{{Path: filepath.Join(s.root, dir), Stored: "project"}}
+	for _, sum := range p.Sessions {
+		candidates = append(candidates,
+			Item{Path: filepath.Join(s.home(), "file-history", sum.ID), Stored: "file-history-" + sum.ID},
+			Item{Path: filepath.Join(s.home(), "session-env", sum.ID), Stored: "session-env-" + sum.ID},
+		)
+	}
+	var out []Item
+	for _, it := range candidates {
+		size, err := diskSize(it.Path)
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		it.Size = size
+		out = append(out, it)
+	}
+	return out, nil
+}
+
+// ActiveSessions lists the project's sessions that changed within ActiveWindow.
+func (s *Store) ActiveSessions(p Project) []Summary {
+	var out []Summary
+	for _, sum := range p.Sessions {
+		if time.Since(sum.Updated) < ActiveWindow {
+			out = append(out, sum)
+		}
+	}
+	return out
+}
+
+// DeleteProject moves a project's items into a new trash entry.
+func (s *Store) DeleteProject(dir string) error {
+	p, err := s.Project(dir)
+	if err != nil {
+		return err
+	}
+	if len(s.ActiveSessions(p)) > 0 {
+		return ErrActive
+	}
+	items, err := s.ProjectItems(dir)
+	if err != nil {
+		return err
+	}
+	return s.moveToTrash(Trashed{
+		ID:          fmt.Sprintf("%d-project%s", time.Now().UnixMilli(), dir),
+		Kind:        KindTrashProject,
+		Sessions:    len(p.Sessions),
+		ProjectDir:  dir,
+		ProjectName: p.Name(),
+		Title:       p.Name(),
+		DeletedAt:   time.Now(),
+		Items:       items,
+	})
+}
+
+// moveToTrash writes the entry's manifest and moves its items in. If a move fails,
+// the items already moved go back and the entry is removed.
+func (s *Store) moveToTrash(t Trashed) error {
+	items := t.Items
 	entry := filepath.Join(s.trashDir(), t.ID)
 	if err := os.MkdirAll(entry, 0o700); err != nil {
 		return err
@@ -211,6 +293,9 @@ func (s *Store) trashed(trashID string) (Trashed, error) {
 		return Trashed{}, err
 	}
 	t.ID = trashID
+	if t.Kind == "" {
+		t.Kind = KindTrashSession
+	}
 	for _, it := range t.Items {
 		if !validName(it.Stored) {
 			return Trashed{}, fmt.Errorf("trash %s: bad item name %q", trashID, it.Stored)

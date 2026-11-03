@@ -1,0 +1,30 @@
+{{define "title"}}Delete · {{.Project.Name}} · wakeview{{end}}
+
+{{define "crumbs"}}<span class="sep">/</span><a href="/p/{{.Project.Dir}}">{{.Project.Name}}</a>{{end}}
+
+{{define "content"}}
+{{- $dir := .Project.Dir}}
+<h1>Delete project?</h1>
+<p><a href="/p/{{$dir}}">{{.Project.Name}}</a> · {{len .Project.Sessions}} sessions · {{.Project.Memories}} memories</p>
+{{- if .Active}}
+<p class="warn">These sessions changed less than 5 minutes ago and may still be running. Claude Code would write them again, so the project can't be deleted now:</p>
+<ul>
+{{- range .Active}}<li><a href="/p/{{$dir}}/s/{{.ID}}">{{.Title}}</a> <span class="muted">{{fmtTime .Updated}}</span></li>{{end}}
+</ul>
+<p><a href="/p/{{$dir}}">Back to the project</a></p>
+{{- else}}
+<p>These go to the wakeview trash, where you can restore them or delete them for good. The project's own directory{{if .Project.Path}} <span class="path">{{.Project.Path}}</span>{{end}} is not touched.</p>
+<table class="list">
+  <tbody>
+  {{- range .Items}}
+    <tr><td class="path">{{.Path}}</td><td class="num nowrap">{{fmtBytes .Size}}</td></tr>
+  {{- end}}
+    <tr><td><strong>Total</strong></td><td class="num nowrap"><strong>{{fmtBytes .Total}}</strong></td></tr>
+  </tbody>
+</table>
+<form class="actions" method="post" action="/p/{{$dir}}/delete">
+  <button type="submit" class="danger">Delete</button>
+  <a href="/p/{{$dir}}">Cancel</a>
+</form>
+{{- end}}
+{{end}}

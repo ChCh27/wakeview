@@ -36,7 +36,7 @@ Then open http://127.0.0.1:7777.
 | `--port` | `7777` | Port to listen on. wakeview binds to 127.0.0.1 only. |
 | `--dir` | `~/.claude/projects` | Claude Code projects directory. |
 
-wakeview changes files only when you delete a session. A deleted session's transcript, its `<id>/` directory, `file-history/<id>` and `session-env/<id>` are moved to `~/.claude/wakeview-trash/`; the Trash page restores them or deletes them for good. A session changed less than 5 minutes ago can't be deleted, since it may still be running.
+wakeview changes files only when you delete a session or a project. A deleted session's transcript, its `<id>/` directory, `file-history/<id>` and `session-env/<id>` are moved to `~/.claude/wakeview-trash/`; a deleted project moves its whole `projects/<dir>/` directory plus every session's `file-history` and `session-env`. The project's own working directory is never touched. The Trash page restores items or deletes them for good. A session changed less than 5 minutes ago, or a project with such a session, can't be deleted, since it may still be running.
 
 ## License
 

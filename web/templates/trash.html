@@ -8,16 +8,16 @@
 <p class="empty">Trash is empty.</p>
 {{- else}}
 <table class="list">
-  <thead><tr><th>Session</th><th>Deleted</th><th class="num">Size</th><th></th></tr></thead>
+  <thead><tr><th>Deleted item</th><th>Deleted</th><th class="num">Size</th><th></th></tr></thead>
   <tbody>
   {{- range .}}
     <tr>
-      <td>{{.Title}}<div class="desc">{{.ProjectName}}</div></td>
+      <td>{{if eq .Kind "project"}}<span class="type-badge">project</span> {{.Title}}<div class="desc">{{.Sessions}} {{if eq .Sessions 1}}session{{else}}sessions{{end}}</div>{{else}}{{.Title}}<div class="desc">{{.ProjectName}}</div>{{end}}</td>
       <td class="nowrap">{{fmtTime .DeletedAt}}</td>
       <td class="num nowrap">{{fmtBytes .Size}}</td>
       <td class="nowrap">
         <form class="inline" method="post" action="/trash/{{.ID}}/restore"><button type="submit">Restore</button></form>
-        <form class="inline" method="post" action="/trash/{{.ID}}/purge" onsubmit="return confirm('Delete this session for good? This cannot be undone.')"><button type="submit" class="danger">Delete forever</button></form>
+        <form class="inline" method="post" action="/trash/{{.ID}}/purge" onsubmit="return confirm('Delete this {{.Kind}} for good? This cannot be undone.')"><button type="submit" class="danger">Delete forever</button></form>
       </td>
     </tr>
   {{- end}}
