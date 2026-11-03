@@ -24,6 +24,12 @@ Requires Go 1.26 or newer.
 go install github.com/ChCh27/wakeview@latest
 ```
 
+The binary goes to `$(go env GOPATH)/bin` (usually `~/go/bin`), or to `$GOBIN` if it is set. If `wakeview` is not found after installing, add that directory to your `PATH`:
+
+```sh
+export PATH="$PATH:$(go env GOPATH)/bin"
+```
+
 ## Run
 
 ```sh
