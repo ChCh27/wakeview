@@ -3,6 +3,7 @@
   --fg: #1f2328;
   --muted: #6b7280;
   --line: #e5e7eb;
+  --line-strong: #b8bec8;
   --panel: #f3f4f6;
   --prompt: #eef4ff;
   --accent: #2563eb;
@@ -18,6 +19,7 @@
     --fg: #e6e6e6;
     --muted: #9aa0a6;
     --line: #2c3038;
+    --line-strong: #555c68;
     --panel: #1f2228;
     --prompt: #1c2a44;
     --accent: #7aa7ff;
@@ -41,8 +43,9 @@ a:hover { text-decoration: underline; }
 
 .top {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  align-items: baseline;
+  align-items: center;
   padding: 12px 16px;
   border-bottom: 1px solid var(--line);
   overflow-wrap: anywhere;
@@ -128,7 +131,8 @@ tr.missing a { color: var(--muted); text-decoration: line-through; }
 .md a[href="#broken"] { color: var(--muted); text-decoration: line-through; pointer-events: none; }
 
 .top-search { margin-left: auto; }
-.trash-link { font-size: 13px; }
+.trash-link { font-size: 14px; font-weight: 600; color: var(--fg); margin-left: 8px; }
+.trash-link:hover { color: var(--accent); text-decoration: none; }
 input[type="search"], select {
   font: inherit;
   font-size: 13px;
@@ -138,7 +142,16 @@ input[type="search"], select {
   border-radius: 6px;
   padding: 3px 8px;
 }
-.top-search input { width: 160px; max-width: 40vw; }
+.top-search input {
+  width: 220px;
+  max-width: 40vw;
+  font-size: 14px;
+  padding: 5px 10px;
+  background: var(--panel);
+  border-color: var(--line-strong);
+}
+.top-search input::placeholder { color: var(--muted); opacity: 1; }
+.top-search input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
 
 .rename { margin: -10px 0 16px; font-size: 13px; }
 .rename > summary { cursor: pointer; color: var(--accent); display: inline; }
