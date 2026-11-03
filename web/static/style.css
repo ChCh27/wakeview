@@ -221,6 +221,18 @@ button.danger { color: var(--danger); border-color: var(--danger); }
 a.sort { color: inherit; }
 a.sort.active { color: var(--fg); font-weight: 600; }
 
+.resume { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -8px 0 16px; font-size: 13px; }
+.resume code {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2px 8px;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
 .total { margin: -8px 0 16px; color: var(--muted); }
 
 a.help {

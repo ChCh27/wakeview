@@ -12,6 +12,7 @@ wakeview reads the session files Claude Code keeps in `~/.claude/projects` and s
 - **Subagents**: a session lists its subagents, and the tool call that launched one links to its transcript.
 - **Memory**: a project's memory files with their type, description and the session that created them. `[[name]]` links lead to the memory they name; links to missing memories are greyed out.
 - **Search**: case-insensitive search across prompts, replies and memory, optionally also tool calls and within one project. All words must occur in the same message; a result opens the session at that message.
+- **Resume**: a session page shows the command that continues it in Claude Code, `cd <project> && claude --resume <id>`, with a copy button.
 - **Live**: an open transcript picks up new messages while the session is still running.
 - **Export**: download a session as Markdown or as a self-contained HTML file. Tick "without tool results" to leave command output, which may contain secrets, out of the file.
 

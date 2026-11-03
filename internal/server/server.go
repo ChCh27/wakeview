@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -310,6 +311,7 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 		"MaxTitle": session.MaxTitle,
 		"Entries":  batch.Entries,
 		"Agents":   agents,
+		"Resume":   resumeCommand(p.Path, id),
 		"Base":     base,
 		"Events":   fmt.Sprintf("%s/events?offset=%d", base, batch.Offset),
 	})
@@ -353,6 +355,20 @@ func (s *Server) handleAgent(w http.ResponseWriter, r *http.Request) {
 		"Base":    base,
 		"Events":  fmt.Sprintf("%s/agents/%s/events?offset=%d", base, url.PathEscape(aid), batch.Offset),
 	})
+}
+
+// resumeCommand is the shell command that continues a session. claude --resume looks the
+// session up by the current directory, so it changes to the project directory first.
+// Single quotes keep $ and spaces in POSIX shells; Windows shells take double quotes.
+func resumeCommand(dir, id string) string {
+	cmd := "claude --resume " + id
+	if dir == "" {
+		return cmd
+	}
+	if runtime.GOOS == "windows" {
+		return fmt.Sprintf("cd \"%s\" && %s", dir, cmd)
+	}
+	return fmt.Sprintf("cd '%s' && %s", strings.ReplaceAll(dir, "'", `'\''`), cmd)
 }
 
 func sessionURL(dir, id string) string {

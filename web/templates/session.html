@@ -23,6 +23,12 @@
   <label><input type="checkbox" name="noresults" value="1"> without tool results</label>
   <a class="delete-link" href="{{.Base}}/delete">Delete session</a>
 </form>
+<div class="resume">
+  <span class="export-label">Resume</span>
+  <code id="resume-cmd">{{.Resume}}</code>
+  <button type="button" data-copy="resume-cmd">Copy</button>
+  {{- if .Project.Missing}}<span class="warn">The project directory is missing, so the session can't be resumed until it is back.</span>{{end}}
+</div>
 {{template "stats" .Summary.Stats}}
 {{- if .Agents}}
 {{- $base := .Base}}

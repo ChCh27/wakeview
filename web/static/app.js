@@ -37,6 +37,24 @@
     target.classList.add('flash');
   }
 
+  // Copy buttons: data-copy names the element whose text goes to the clipboard.
+  for (const btn of document.querySelectorAll('[data-copy]')) {
+    btn.addEventListener('click', async () => {
+      const source = document.getElementById(btn.dataset.copy);
+      if (!source) return;
+      const label = btn.textContent;
+      try {
+        await navigator.clipboard.writeText(source.textContent);
+        btn.textContent = 'Copied';
+      } catch {
+        // No clipboard access: select the text so Ctrl+C copies it.
+        getSelection().selectAllChildren(source);
+        btn.textContent = 'Press Ctrl+C';
+      }
+      setTimeout(() => { btn.textContent = label; }, 1500);
+    });
+  }
+
   // Jump buttons: each shows only when there is at least a screen to travel in its direction.
   const toTop = document.querySelector('[data-jump="top"]');
   const toBottom = document.querySelector('[data-jump="bottom"]');
