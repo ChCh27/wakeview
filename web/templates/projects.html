@@ -2,12 +2,23 @@
 
 {{define "content"}}
 <h1>Projects</h1>
-{{- if not .Projects}}
+{{- if not .Total}}
 <p class="empty">No projects found.</p>
 {{- else}}
 {{- if .CostKnown}}<p class="total">Total cost (API est.): <strong>{{fmtCost .CostUSD}}</strong></p>{{end}}
+<form class="list-filter" action="/" method="get">
+  <input type="search" name="q" value="{{.List.Query}}" placeholder="Filter by path">
+  <label><input type="checkbox" name="missing" value="1"{{if .List.Missing}} checked{{end}}> only missing directories</label>
+  <input type="hidden" name="sort" value="{{.List.Sort}}">
+  <input type="hidden" name="order" value="{{if .List.Desc}}desc{{else}}asc{{end}}">
+  <button type="submit">Filter</button>
+  {{- if lt (len .Projects) .Total}} <span class="muted">Showing {{len .Projects}} of {{.Total}} · <a href="/">clear</a></span>{{end}}
+</form>
+{{- if not .Projects}}
+<p class="empty">No projects match.</p>
+{{- else}}
 <table class="list">
-  <thead><tr><th>Project</th><th class="num">Sessions</th><th class="num">Memory</th><th class="num">Cost (API est.)</th><th>Last active</th></tr></thead>
+  <thead><tr>{{template "headers" .Headers}}</tr></thead>
   <tbody>
   {{- range .Projects}}
     <tr{{if .Missing}} class="missing"{{end}}>
@@ -20,5 +31,6 @@
   {{- end}}
   </tbody>
 </table>
+{{- end}}
 {{- end}}
 {{end}}

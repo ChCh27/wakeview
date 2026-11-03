@@ -183,6 +183,12 @@ button {
 button:hover { background: var(--panel); }
 button.danger { color: var(--danger); border-color: var(--danger); }
 
+.list-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 13px; }
+.list-filter input[type="search"] { flex: 0 1 260px; }
+.list-filter label { color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+a.sort { color: inherit; }
+a.sort.active { color: var(--fg); font-weight: 600; }
+
 .total { margin: -8px 0 16px; color: var(--muted); }
 .total strong { color: var(--fg); }
 

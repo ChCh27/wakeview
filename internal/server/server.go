@@ -154,7 +154,16 @@ func (s *Server) handleProjects(w http.ResponseWriter, r *http.Request) {
 		total += p.CostUSD
 		known = known || p.CostKnown
 	}
-	s.render(w, "projects", map[string]any{"Projects": projects, "CostUSD": total, "CostKnown": known})
+	lp := parseList(r.URL.Query(), projectColumns, "updated")
+	shown := filterProjects(projects, lp)
+	s.render(w, "projects", map[string]any{
+		"Projects":  shown,
+		"Total":     len(projects),
+		"List":      lp,
+		"Headers":   headers("/", lp, projectColumns),
+		"CostUSD":   total,
+		"CostKnown": known,
+	})
 }
 
 func (s *Server) handleSessions(w http.ResponseWriter, r *http.Request) {
@@ -163,7 +172,13 @@ func (s *Server) handleSessions(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	s.render(w, "sessions", p)
+	lp := parseList(r.URL.Query(), sessionColumns, "updated")
+	s.render(w, "sessions", map[string]any{
+		"Project":  p,
+		"Sessions": filterSessions(p.Sessions, lp),
+		"List":     lp,
+		"Headers":  headers("/p/"+url.PathEscape(p.Dir), lp, sessionColumns),
+	})
 }
 
 func (s *Server) handleMemories(w http.ResponseWriter, r *http.Request) {

@@ -1,17 +1,29 @@
-{{define "title"}}{{.Name}} · wakeview{{end}}
+{{define "title"}}{{.Project.Name}} · wakeview{{end}}
 
-{{define "crumbs"}}<span class="sep">/</span><span>{{.Name}}</span>{{end}}
+{{define "crumbs"}}<span class="sep">/</span><span>{{.Project.Name}}</span>{{end}}
 
 {{define "content"}}
+{{- with .Project}}
 <h1>{{.Name}}{{if .Missing}} <span class="badge">directory missing</span>{{end}}</h1>
 <nav class="tabs"><span class="active">Sessions ({{len .Sessions}})</span><a href="/p/{{.Dir}}/memory">Memory ({{.Memories}})</a><a href="/p/{{.Dir}}/instructions">Instructions ({{.Instructions}})</a><a class="delete-link" href="/p/{{.Dir}}/delete">Delete project</a></nav>
-{{- if not .Sessions}}
+{{- end}}
+{{- $dir := .Project.Dir}}
+{{- if not .Project.Sessions}}
 <p class="empty">No sessions.</p>
 {{- else}}
+<form class="list-filter" action="/p/{{$dir}}" method="get">
+  <input type="search" name="q" value="{{.List.Query}}" placeholder="Filter by title">
+  <input type="hidden" name="sort" value="{{.List.Sort}}">
+  <input type="hidden" name="order" value="{{if .List.Desc}}desc{{else}}asc{{end}}">
+  <button type="submit">Filter</button>
+  {{- if lt (len .Sessions) (len .Project.Sessions)}} <span class="muted">Showing {{len .Sessions}} of {{len .Project.Sessions}} · <a href="/p/{{$dir}}">clear</a></span>{{end}}
+</form>
+{{- if not .Sessions}}
+<p class="empty">No sessions match.</p>
+{{- else}}
 <table class="list">
-  <thead><tr><th>Session</th><th>Started</th><th>Updated</th><th class="num">Messages</th><th class="num">Cost (API est.)</th></tr></thead>
+  <thead><tr>{{template "headers" .Headers}}</tr></thead>
   <tbody>
-  {{- $dir := .Dir}}
   {{- range .Sessions}}
     <tr>
       <td><a href="/p/{{$dir}}/s/{{.ID}}">{{.Title}}</a></td>
@@ -23,5 +35,6 @@
   {{- end}}
   </tbody>
 </table>
+{{- end}}
 {{- end}}
 {{end}}

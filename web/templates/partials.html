@@ -45,6 +45,8 @@
 </section>
 {{end}}
 
+{{define "headers"}}{{range .}}<th{{if .Num}} class="num"{{end}}><a class="sort{{if .Arrow}} active{{end}}" href="{{.URL}}">{{.Label}}{{with .Arrow}} {{.}}{{end}}</a></th>{{end}}{{end}}
+
 {{define "filters"}}
 <div class="filters">
   <label><input type="checkbox" data-filter="tools" checked> Tool calls</label>
