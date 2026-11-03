@@ -83,7 +83,7 @@ func New(store *session.Store) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, page := range []string{"projects", "sessions", "session", "memories", "memory", "delete", "trash", "search", "agent", "instructions"} {
+	for _, page := range []string{"projects", "sessions", "session", "memories", "memory", "delete", "trash", "search", "agent", "instructions", "global"} {
 		t, err := template.New("").Funcs(funcs).ParseFS(web.FS, "templates/base.html", "templates/partials.html", "templates/"+page+".html")
 		if err != nil {
 			return nil, err
@@ -108,6 +108,7 @@ func New(store *session.Store) (*Server, error) {
 	s.mux.HandleFunc("GET /p/{dir}", s.handleSessions)
 	s.mux.HandleFunc("GET /p/{dir}/memory", s.handleMemories)
 	s.mux.HandleFunc("GET /p/{dir}/instructions", s.handleInstructions)
+	s.mux.HandleFunc("GET /instructions", s.handleGlobalInstructions)
 	s.mux.HandleFunc("GET /p/{dir}/memory/{file}", s.handleMemory)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}", s.handleSession)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/events", s.handleEvents)
@@ -188,11 +189,23 @@ func (s *Server) handleInstructions(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	var files []instructionView
-	for _, in := range s.store.Instructions(p) {
-		files = append(files, instructionView{Instruction: in, HTML: s.dec.Markdown(in.Body)})
+	s.render(w, "instructions", map[string]any{
+		"Project": p,
+		"Files":   s.instructionViews(s.store.Instructions(p)),
+		"Global":  s.store.GlobalCount(),
+	})
+}
+
+func (s *Server) handleGlobalInstructions(w http.ResponseWriter, r *http.Request) {
+	s.render(w, "global", map[string]any{"Files": s.instructionViews(s.store.GlobalInstructions())})
+}
+
+func (s *Server) instructionViews(files []session.Instruction) []instructionView {
+	var out []instructionView
+	for _, in := range files {
+		out = append(out, instructionView{Instruction: in, HTML: s.dec.Markdown(in.Body)})
 	}
-	s.render(w, "instructions", map[string]any{"Project": p, "Files": files})
+	return out
 }
 
 func (s *Server) handleMemory(w http.ResponseWriter, r *http.Request) {

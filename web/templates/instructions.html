@@ -8,20 +8,10 @@
 <nav class="tabs"><a href="/p/{{.Dir}}">Sessions ({{len .Sessions}})</a><a href="/p/{{.Dir}}/memory">Memory ({{.Memories}})</a><span class="active">Instructions ({{.Instructions}})</span></nav>
 {{- if .Missing}}<p class="muted">The project directory no longer exists, so only files outside it are shown.</p>{{end}}
 {{- end}}
-<p class="muted">Files Claude Code loads into this project's sessions, in load order.</p>
+{{- if .Global}}<p class="index-link">Loaded first: <a href="/instructions">global instructions ({{.Global}})</a></p>{{end}}
+<p class="muted">Then these files, in load order.</p>
 {{- if not .Files}}
-<p class="empty">No instruction files.</p>
+<p class="empty">No project instruction files.</p>
 {{- end}}
-{{- range .Files}}
-<section class="instruction">
-  <div class="instruction-head">
-    <span class="type-badge">{{.Level}}</span>
-    <span class="path">{{.Path}}</span>
-    {{- if eq .Git "tracked"}} <span class="git-badge git-tracked">git: {{.Git}}</span>
-    {{- else if eq .Git "untracked"}} <span class="git-badge git-untracked">git: {{.Git}}</span>
-    {{- else if .Git}} <span class="git-badge git-modified">git: {{.Git}}</span>{{end}}
-  </div>
-  <div class="md">{{.HTML}}</div>
-</section>
-{{- end}}
+{{- range .Files}}{{template "instruction" .}}{{end}}
 {{end}}

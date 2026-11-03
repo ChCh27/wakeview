@@ -36,7 +36,7 @@ type Project struct {
 	CostKnown bool
 	// Memories is the number of memory files, not counting MEMORY.md.
 	Memories int
-	// Instructions is the number of CLAUDE.md-style files loaded into the project's sessions.
+	// Instructions is the number of the project's own CLAUDE.md-style files, without global ones.
 	Instructions int
 }
 
@@ -129,7 +129,7 @@ func (s *Store) Project(dir string) (Project, error) {
 			p.Missing = true
 		}
 	}
-	p.Instructions = len(s.instructionFiles(p))
+	p.Instructions = len(s.projectFiles(p))
 	return p, nil
 }
 

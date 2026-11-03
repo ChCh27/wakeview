@@ -1,0 +1,12 @@
+{{define "title"}}Global instructions · wakeview{{end}}
+
+{{define "crumbs"}}<span class="sep">/</span><span>Global instructions</span>{{end}}
+
+{{define "content"}}
+<h1>Global instructions</h1>
+<p class="muted">Loaded into every session, before the project's own files.</p>
+{{- if not .Files}}
+<p class="empty">No global instruction files.</p>
+{{- end}}
+{{- range .Files}}{{template "instruction" .}}{{end}}
+{{end}}
