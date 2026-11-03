@@ -6,6 +6,7 @@
   --panel: #f3f4f6;
   --prompt: #eef4ff;
   --accent: #2563eb;
+  --on-accent: #ffffff;
   --danger: #b91c1c;
   --danger-bg: #fdecec;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -20,6 +21,7 @@
     --panel: #1f2228;
     --prompt: #1c2a44;
     --accent: #7aa7ff;
+    --on-accent: #16181d;
     --danger: #f28b82;
     --danger-bg: #3a1f1f;
   }
@@ -163,6 +165,23 @@ h2 { font-size: 17px; margin: 24px 0 8px; }
 a.snippet:hover { text-decoration: none; background: var(--panel); }
 .hit-kind { font-size: 11px; color: var(--muted); text-transform: uppercase; }
 mark { background: #fde68a; color: #1f2328; border-radius: 2px; }
+.jump { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
+.jump button {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--on-accent);
+  background: var(--accent);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  opacity: 0.9;
+}
+.jump button:hover { background: var(--accent); opacity: 1; }
+.jump button[hidden] { display: none; }
+
 .flash { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
 .delete-link { margin-left: auto; color: var(--danger); }
 

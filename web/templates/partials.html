@@ -49,6 +49,13 @@
 
 {{define "help"}} <a class="help" href="/help#{{.}}" title="What is this?">?</a>{{end}}
 
+{{define "jump"}}
+<div class="jump">
+  <button type="button" data-jump="top" title="To the top" aria-label="To the top" hidden>↑</button>
+  <button type="button" data-jump="bottom" title="To the bottom" aria-label="To the bottom" hidden>↓</button>
+</div>
+{{end}}
+
 {{define "filters"}}
 <div class="filters">
   <label><input type="checkbox" data-filter="tools" checked> Tool calls</label>

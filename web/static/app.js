@@ -37,6 +37,20 @@
     target.classList.add('flash');
   }
 
+  // Jump buttons: each shows only when there is at least a screen to travel in its direction.
+  const toTop = document.querySelector('[data-jump="top"]');
+  const toBottom = document.querySelector('[data-jump="bottom"]');
+  const updateJump = () => {
+    const below = document.body.scrollHeight - (window.scrollY + window.innerHeight);
+    if (toTop) toTop.hidden = window.scrollY < window.innerHeight;
+    if (toBottom) toBottom.hidden = below < window.innerHeight;
+  };
+  toTop?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  toBottom?.addEventListener('click', () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }));
+  window.addEventListener('scroll', updateJump, { passive: true });
+  window.addEventListener('resize', updateJump);
+  updateJump();
+
   if (!log || !log.dataset.events) return;
 
   const atBottom = () => window.innerHeight + window.scrollY >= document.body.scrollHeight - 80;
@@ -53,6 +67,7 @@
       slot.outerHTML = r.html;
     }
     if (stick) window.scrollTo(0, document.body.scrollHeight);
+    updateJump();
   });
 
   es.addEventListener('reload', () => location.reload());

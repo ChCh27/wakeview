@@ -7,4 +7,5 @@
 <div class="session-meta">{{if .Agent.Type}}<span class="type-badge">{{.Agent.Type}}</span> · {{end}}subagent of <a href="{{.Base}}">{{.Summary.Title}}</a> · agent-{{.Agent.ID}}</div>
 {{template "filters"}}
 <div id="log" data-events="{{.Events}}">{{template "entries" .Entries}}</div>
+{{template "jump"}}
 {{end}}
