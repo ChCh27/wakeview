@@ -9,6 +9,7 @@ wakeview reads the session files Claude Code keeps in `~/.claude/projects` and s
 - **Stats**: per session, the cost, duration, lines changed and tokens by model. Costs are Claude Code's own estimate at API prices, not what a subscription is billed.
 - **Transcript**: your prompts and Claude's replies (rendered markdown). Tool calls and thinking are collapsed; open a tool call to see its input and result.
 - **Live**: an open transcript picks up new messages while the session is still running.
+- **Export**: download a session as Markdown or as a self-contained HTML file. Tick "without tool results" to leave command output, which may contain secrets, out of the file.
 
 Subagent transcripts are not shown.
 

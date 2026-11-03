@@ -1,3 +1,37 @@
+{{define "stats"}}
+<section class="stats">
+  {{- if .Known}}
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">Cost (API est.)</div><div class="stat-value">{{fmtCost .CostUSD}}</div></div>
+    <div class="stat"><div class="stat-label">Duration</div><div class="stat-value">{{fmtDuration .Duration}}</div></div>
+    <div class="stat"><div class="stat-label">API time</div><div class="stat-value">{{fmtDuration .APIDuration}}</div></div>
+    <div class="stat"><div class="stat-label">Lines</div><div class="stat-value"><span class="added">+{{.LinesAdded}}</span> <span class="removed">−{{.LinesRemoved}}</span></div></div>
+  </div>
+  {{- if .Models}}
+  <div class="table-wrap">
+  <table class="list models">
+    <thead><tr><th>Model</th><th class="num">Input</th><th class="num">Output</th><th class="num">Cache read</th><th class="num">Cache write</th><th class="num">Cost</th></tr></thead>
+    <tbody>
+    {{- range .Models}}
+      <tr>
+        <td>{{.Model}}</td>
+        <td class="num">{{fmtTokens .Input}}</td>
+        <td class="num">{{fmtTokens .Output}}</td>
+        <td class="num">{{fmtTokens .CacheRead}}</td>
+        <td class="num">{{fmtTokens .CacheWrite}}</td>
+        <td class="num">{{fmtCost .CostUSD}}</td>
+      </tr>
+    {{- end}}
+    </tbody>
+  </table>
+  </div>
+  {{- end}}
+  {{- else}}
+  <p class="empty">No cost data for this session.</p>
+  {{- end}}
+</section>
+{{end}}
+
 {{define "entries"}}{{range .}}{{template "entry" .}}{{end}}{{end}}
 
 {{define "entry"}}
@@ -24,6 +58,7 @@
 {{end}}
 
 {{define "result"}}<div class="result{{if .IsError}} error{{end}}" id="result-{{.ToolID}}">
-  {{- if .Text}}<pre>{{.Text}}</pre>{{else if not .Images}}<div class="empty">(no output)</div>{{end}}
+  {{- if .Omitted}}<div class="empty">(result omitted)</div>
+  {{- else if .Text}}<pre>{{.Text}}</pre>{{else if not .Images}}<div class="empty">(no output)</div>{{end}}
   {{- range .Images}}<img class="shot" src="{{.URL}}" alt="">{{end}}
 </div>{{end}}

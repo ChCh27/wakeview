@@ -1,0 +1,17 @@
+{{define "export"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Summary.Title}}</title>
+<style>{{.CSS}}</style>
+</head>
+<body>
+<main>
+<h1>{{.Summary.Title}}</h1>
+<div class="session-meta">{{fmtTime .Summary.Started}} · {{.Project.Name}} · {{.Summary.ID}}</div>
+{{template "stats" .Summary.Stats}}
+{{template "entries" .Entries}}
+</main>
+</body>
+</html>{{end}}

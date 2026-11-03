@@ -75,6 +75,20 @@ tr.missing a { color: var(--muted); text-decoration: line-through; }
 
 .session-meta { color: var(--muted); font-size: 13px; margin: -8px 0 20px; overflow-wrap: anywhere; }
 
+.export { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -8px 0 16px; font-size: 13px; }
+.export-label { color: var(--muted); }
+.export button {
+  font: inherit;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+.export button:hover { background: var(--panel); }
+.export label { color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+
 .total { margin: -8px 0 16px; color: var(--muted); }
 .total strong { color: var(--fg); }
 

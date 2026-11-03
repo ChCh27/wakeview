@@ -107,6 +107,8 @@ type Result struct {
 	Text    string
 	IsError bool
 	Images  []Image
+	// Omitted marks a result left out of an export.
+	Omitted bool
 }
 
 type Image struct {

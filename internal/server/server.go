@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ChCh27/wakeview/internal/export"
 	"github.com/ChCh27/wakeview/internal/session"
 	"github.com/ChCh27/wakeview/web"
 )
@@ -23,6 +24,8 @@ type Server struct {
 	dec      *session.Decoder
 	pages    map[string]*template.Template
 	partials *template.Template
+	export   *template.Template
+	css      template.CSS
 	mux      *http.ServeMux
 }
 
@@ -72,6 +75,15 @@ func New(store *session.Store) (*Server, error) {
 		}
 		s.pages[page] = t
 	}
+	s.export, err = template.New("").Funcs(funcs).ParseFS(web.FS, "templates/partials.html", "templates/export.html")
+	if err != nil {
+		return nil, err
+	}
+	css, err := web.FS.ReadFile("static/style.css")
+	if err != nil {
+		return nil, err
+	}
+	s.css = template.CSS(css)
 	static, err := fs.Sub(web.FS, "static")
 	if err != nil {
 		return nil, err
@@ -81,6 +93,8 @@ func New(store *session.Store) (*Server, error) {
 	s.mux.HandleFunc("GET /p/{dir}", s.handleSessions)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}", s.handleSession)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/events", s.handleEvents)
+	s.mux.HandleFunc("GET /p/{dir}/s/{id}/export.md", s.handleExportMarkdown)
+	s.mux.HandleFunc("GET /p/{dir}/s/{id}/export.html", s.handleExportHTML)
 	return s, nil
 }
 
@@ -114,33 +128,86 @@ func (s *Server) handleSessions(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	dir, id := r.PathValue("dir"), r.PathValue("id")
-	p, err := s.store.Project(dir)
+	p, sum, batch, err := s.loadSession(dir, id)
 	if err != nil {
 		s.fail(w, err)
 		return
 	}
-	sum, path, err := s.store.Session(dir, id)
-	if err != nil {
-		s.fail(w, err)
-		return
-	}
-	f, err := os.Open(path)
-	if err != nil {
-		s.fail(w, err)
-		return
-	}
-	defer f.Close()
-	batch, err := s.dec.Decode(f)
-	if err != nil {
-		s.fail(w, err)
-		return
-	}
+	base := fmt.Sprintf("/p/%s/s/%s", url.PathEscape(dir), url.PathEscape(id))
 	s.render(w, "session", map[string]any{
 		"Project": p,
 		"Summary": sum,
 		"Entries": batch.Entries,
-		"Events":  fmt.Sprintf("/p/%s/s/%s/events?offset=%d", url.PathEscape(dir), url.PathEscape(id), batch.Offset),
+		"Base":    base,
+		"Events":  fmt.Sprintf("%s/events?offset=%d", base, batch.Offset),
 	})
+}
+
+func (s *Server) handleExportMarkdown(w http.ResponseWriter, r *http.Request) {
+	p, sum, entries, err := s.loadExport(r)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	var buf bytes.Buffer
+	export.Markdown(&buf, p, sum, entries)
+	s.download(w, export.FileName(sum)+".md", "text/markdown; charset=utf-8", &buf)
+}
+
+func (s *Server) handleExportHTML(w http.ResponseWriter, r *http.Request) {
+	p, sum, entries, err := s.loadExport(r)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	var buf bytes.Buffer
+	err = s.export.ExecuteTemplate(&buf, "export", map[string]any{
+		"Project": p,
+		"Summary": sum,
+		"Entries": entries,
+		"CSS":     s.css,
+	})
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	s.download(w, export.FileName(sum)+".html", "text/html; charset=utf-8", &buf)
+}
+
+// loadExport reads a session for export. With noresults=1 tool results are left out.
+func (s *Server) loadExport(r *http.Request) (session.Project, session.Summary, []session.Entry, error) {
+	p, sum, batch, err := s.loadSession(r.PathValue("dir"), r.PathValue("id"))
+	if err != nil {
+		return p, sum, nil, err
+	}
+	if r.URL.Query().Get("noresults") == "1" {
+		export.OmitResults(batch.Entries)
+	}
+	return p, sum, batch.Entries, nil
+}
+
+func (s *Server) loadSession(dir, id string) (session.Project, session.Summary, session.Batch, error) {
+	p, err := s.store.Project(dir)
+	if err != nil {
+		return p, session.Summary{}, session.Batch{}, err
+	}
+	sum, path, err := s.store.Session(dir, id)
+	if err != nil {
+		return p, sum, session.Batch{}, err
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		return p, sum, session.Batch{}, err
+	}
+	defer f.Close()
+	batch, err := s.dec.Decode(f)
+	return p, sum, batch, err
+}
+
+func (s *Server) download(w http.ResponseWriter, name, contentType string, body *bytes.Buffer) {
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", name))
+	body.WriteTo(w)
 }
 
 type update struct {
