@@ -4,6 +4,17 @@
 
 {{define "content"}}
 <h1>{{.Summary.Title}}</h1>
+<details class="rename">
+  <summary>Rename</summary>
+  {{- if .Active}}
+  <p class="warn">This session changed less than 5 minutes ago and may still be running. Claude Code would write its old name again, so it can't be renamed now.</p>
+  {{- else}}
+  <form method="post" action="{{.Base}}/rename">
+    <input type="text" name="title" value="{{.Summary.Title}}" maxlength="{{.MaxTitle}}" required>
+    <button type="submit">Save</button>
+  </form>
+  {{- end}}
+</details>
 <div class="session-meta">{{fmtTime .Summary.Started}} · {{.Summary.ID}}</div>
 <form class="export" method="get">
   <span class="export-label">Export</span>

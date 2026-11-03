@@ -138,6 +138,20 @@ input[type="search"], select {
 }
 .top-search input { width: 160px; max-width: 40vw; }
 
+.rename { margin: -10px 0 16px; font-size: 13px; }
+.rename > summary { cursor: pointer; color: var(--accent); display: inline; }
+.rename form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.rename input[type="text"] {
+  flex: 1 1 280px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
 .search-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; }
 .search-form input[type="search"] { flex: 1 1 240px; font-size: 15px; padding: 6px 10px; }
 .search-form select { max-width: 100%; }

@@ -116,6 +116,7 @@ func New(store *session.Store) (*Server, error) {
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/agents/{aid}/events", s.handleAgentEvents)
 	s.mux.HandleFunc("GET /p/{dir}/delete", s.handleDeleteProjectConfirm)
 	s.mux.HandleFunc("POST /p/{dir}/delete", sameOrigin(s.handleDeleteProject))
+	s.mux.HandleFunc("POST /p/{dir}/s/{id}/rename", sameOrigin(s.handleRename))
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/delete", s.handleDeleteConfirm)
 	s.mux.HandleFunc("POST /p/{dir}/s/{id}/delete", sameOrigin(s.handleDelete))
 	s.mux.HandleFunc("GET /search", s.handleSearch)
@@ -281,13 +282,20 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	}
 	base := sessionURL(dir, id)
 	linkAgents(base, &batch)
+	active, err := s.store.Active(dir, id)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
 	s.render(w, "session", map[string]any{
-		"Project": p,
-		"Summary": sum,
-		"Entries": batch.Entries,
-		"Agents":  agents,
-		"Base":    base,
-		"Events":  fmt.Sprintf("%s/events?offset=%d", base, batch.Offset),
+		"Project":  p,
+		"Summary":  sum,
+		"Active":   active,
+		"MaxTitle": session.MaxTitle,
+		"Entries":  batch.Entries,
+		"Agents":   agents,
+		"Base":     base,
+		"Events":   fmt.Sprintf("%s/events?offset=%d", base, batch.Offset),
 	})
 }
 
@@ -379,6 +387,15 @@ func (s *Server) handleDeleteConfirm(w http.ResponseWriter, r *http.Request) {
 		"Active":  active,
 		"Base":    fmt.Sprintf("/p/%s/s/%s", url.PathEscape(dir), url.PathEscape(id)),
 	})
+}
+
+func (s *Server) handleRename(w http.ResponseWriter, r *http.Request) {
+	dir, id := r.PathValue("dir"), r.PathValue("id")
+	if err := s.store.Rename(dir, id, r.FormValue("title")); err != nil {
+		s.fail(w, err)
+		return
+	}
+	http.Redirect(w, r, sessionURL(dir, id), http.StatusSeeOther)
 }
 
 func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
@@ -702,6 +719,10 @@ func (s *Server) render(w http.ResponseWriter, page string, data any) {
 func (s *Server) fail(w http.ResponseWriter, err error) {
 	if errors.Is(err, session.ErrNotFound) {
 		http.NotFound(w, nil)
+		return
+	}
+	if errors.Is(err, session.ErrBadTitle) {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if errors.Is(err, session.ErrActive) || errors.Is(err, session.ErrConflict) {
