@@ -111,6 +111,14 @@ tr.missing a { color: var(--muted); text-decoration: line-through; }
 #log.hide-tools .block.tool:not(.forced),
 #log.hide-thinking .block.thinking:not(.forced) { display: none; }
 
+.instruction { margin: 0 0 24px; border: 1px solid var(--line); border-radius: 8px; }
+.instruction-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--panel); border-radius: 8px 8px 0 0; }
+.instruction .md { padding: 12px; }
+.git-badge { display: inline-block; padding: 0 6px; border-radius: 4px; font-size: 12px; border: 1px solid currentColor; }
+.git-tracked { color: #15803d; }
+.git-modified { color: #b45309; }
+.git-untracked { color: var(--muted); }
+
 .agents { margin-bottom: 16px; }
 .agent-list { margin: 0; padding: 8px 12px 8px 28px; font-size: 13px; }
 .agent-list li + li { margin-top: 4px; }

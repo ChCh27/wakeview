@@ -4,7 +4,7 @@
 
 {{define "content"}}
 <h1>{{.Name}}{{if .Missing}} <span class="badge">directory missing</span>{{end}}</h1>
-<nav class="tabs"><span class="active">Sessions ({{len .Sessions}})</span><a href="/p/{{.Dir}}/memory">Memory ({{.Memories}})</a></nav>
+<nav class="tabs"><span class="active">Sessions ({{len .Sessions}})</span><a href="/p/{{.Dir}}/memory">Memory ({{.Memories}})</a><a href="/p/{{.Dir}}/instructions">Instructions ({{.Instructions}})</a></nav>
 {{- if not .Sessions}}
 <p class="empty">No sessions.</p>
 {{- else}}

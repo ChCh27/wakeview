@@ -83,7 +83,7 @@ func New(store *session.Store) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, page := range []string{"projects", "sessions", "session", "memories", "memory", "delete", "trash", "search", "agent"} {
+	for _, page := range []string{"projects", "sessions", "session", "memories", "memory", "delete", "trash", "search", "agent", "instructions"} {
 		t, err := template.New("").Funcs(funcs).ParseFS(web.FS, "templates/base.html", "templates/partials.html", "templates/"+page+".html")
 		if err != nil {
 			return nil, err
@@ -107,6 +107,7 @@ func New(store *session.Store) (*Server, error) {
 	s.mux.HandleFunc("GET /{$}", s.handleProjects)
 	s.mux.HandleFunc("GET /p/{dir}", s.handleSessions)
 	s.mux.HandleFunc("GET /p/{dir}/memory", s.handleMemories)
+	s.mux.HandleFunc("GET /p/{dir}/instructions", s.handleInstructions)
 	s.mux.HandleFunc("GET /p/{dir}/memory/{file}", s.handleMemory)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}", s.handleSession)
 	s.mux.HandleFunc("GET /p/{dir}/s/{id}/events", s.handleEvents)
@@ -174,6 +175,24 @@ func (s *Server) handleMemories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.render(w, "memories", map[string]any{"Project": p, "Memories": mems, "HasIndex": s.store.HasIndex(dir), "IndexFile": session.IndexFile})
+}
+
+type instructionView struct {
+	session.Instruction
+	HTML template.HTML
+}
+
+func (s *Server) handleInstructions(w http.ResponseWriter, r *http.Request) {
+	p, err := s.store.Project(r.PathValue("dir"))
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	var files []instructionView
+	for _, in := range s.store.Instructions(p) {
+		files = append(files, instructionView{Instruction: in, HTML: s.dec.Markdown(in.Body)})
+	}
+	s.render(w, "instructions", map[string]any{"Project": p, "Files": files})
 }
 
 func (s *Server) handleMemory(w http.ResponseWriter, r *http.Request) {
