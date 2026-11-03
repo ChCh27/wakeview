@@ -1,0 +1,29 @@
+{{define "entries"}}{{range .}}{{template "entry" .}}{{end}}{{end}}
+
+{{define "entry"}}
+{{- if eq .Kind "prompt"}}
+<div class="msg prompt">
+  <div class="meta">You · {{fmtTime .Time}}</div>
+  {{- if .Text}}<div class="body plain">{{.Text}}</div>{{end}}
+  {{- range .Images}}<img class="shot" src="{{.URL}}" alt="">{{end}}
+</div>
+{{- else if eq .Kind "text"}}
+<div class="msg reply"><div class="body md">{{.HTML}}</div></div>
+{{- else if eq .Kind "thinking"}}
+<details class="block thinking"><summary>Thinking</summary><div class="plain">{{.Text}}</div></details>
+{{- else if eq .Kind "tool"}}{{with .Tool}}
+<details class="block tool{{if and .Result .Result.IsError}} failed{{end}}">
+  <summary><span class="tool-name">{{.Name}}</span>{{if .Hint}} <span class="tool-hint">{{.Hint}}</span>{{end}}</summary>
+  <div class="fields">{{range .Input}}<div class="field">{{if .Key}}<div class="key">{{.Key}}</div>{{end}}<pre>{{.Value}}</pre></div>{{end}}</div>
+  {{- if .Result}}{{template "result" .Result}}{{else}}<div class="result pending" id="result-{{.ID}}">Waiting for result…</div>{{end}}
+</details>
+{{- end}}
+{{- else if eq .Kind "compact"}}
+<details class="block compact"><summary>Context compacted</summary><div class="plain">{{.Text}}</div></details>
+{{- end}}
+{{end}}
+
+{{define "result"}}<div class="result{{if .IsError}} error{{end}}" id="result-{{.ToolID}}">
+  {{- if .Text}}<pre>{{.Text}}</pre>{{else if not .Images}}<div class="empty">(no output)</div>{{end}}
+  {{- range .Images}}<img class="shot" src="{{.URL}}" alt="">{{end}}
+</div>{{end}}

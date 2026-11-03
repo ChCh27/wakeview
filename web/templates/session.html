@@ -1,0 +1,9 @@
+{{define "title"}}{{.Summary.Title}} · wakeview{{end}}
+
+{{define "crumbs"}}<span class="sep">/</span><a href="/p/{{.Project.Dir}}">{{.Project.Name}}</a>{{end}}
+
+{{define "content"}}
+<h1>{{.Summary.Title}}</h1>
+<div class="session-meta">{{fmtTime .Summary.Started}} · {{.Summary.ID}}</div>
+<div id="log" data-events="{{.Events}}">{{template "entries" .Entries}}</div>
+{{end}}

@@ -1,0 +1,25 @@
+{{define "title"}}{{.Name}} · wakeview{{end}}
+
+{{define "crumbs"}}<span class="sep">/</span><span>{{.Name}}</span>{{end}}
+
+{{define "content"}}
+<h1>{{.Name}}{{if .Missing}} <span class="badge">directory missing</span>{{end}}</h1>
+{{- if not .Sessions}}
+<p class="empty">No sessions.</p>
+{{- else}}
+<table class="list">
+  <thead><tr><th>Session</th><th>Started</th><th>Updated</th><th class="num">Messages</th></tr></thead>
+  <tbody>
+  {{- $dir := .Dir}}
+  {{- range .Sessions}}
+    <tr>
+      <td><a href="/p/{{$dir}}/s/{{.ID}}">{{.Title}}</a></td>
+      <td class="nowrap">{{fmtTime .Started}}</td>
+      <td class="nowrap">{{fmtTime .Updated}}</td>
+      <td class="num">{{.Messages}}</td>
+    </tr>
+  {{- end}}
+  </tbody>
+</table>
+{{- end}}
+{{end}}
